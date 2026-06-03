@@ -1,0 +1,30 @@
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import { Toaster } from 'react-hot-toast'
+import App from './App.jsx'
+import { AuthProvider } from './context/AuthContext.jsx'
+import './index.css'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <App />
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#0D1321',
+              border: '1px solid #2A3A50',
+              color: '#E8DCC8',
+              fontFamily: "'DM Mono', monospace",
+              fontSize: '13px',
+            },
+            success: { iconTheme: { primary: '#C9A84C', secondary: '#080C14' } },
+          }}
+        />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+)
