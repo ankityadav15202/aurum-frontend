@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -15,13 +17,19 @@ const QUICK = [
 
 export default function AIAdvisor() {
   const { user }    = useAuth();
-  const [msgs, setMsgs]       = useState([]);
+  const [msgs, setMsgs]       = useState(() => {
+    try { return JSON.parse(localStorage.getItem('aurum_ai_chat')) || []; } catch { return []; }
+  });
   const [input, setInput]     = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef();
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [msgs]);
+
+  useEffect(() => {
+    localStorage.setItem('aurum_ai_chat', JSON.stringify(msgs));
   }, [msgs]);
 
   const sendMessage = async (text) => {
@@ -107,7 +115,11 @@ export default function AIAdvisor() {
               color: m.role === 'user' ? 'var(--text)' : '#B8C4D0',
               fontFamily: 'var(--font-serif)',
             }}>
-              {m.content}
+              {m.role === 'assistant' ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+              ) : (
+                m.content
+              )}
             </div>
             {m.role === 'user' && (
               <div style={{ width: 30, height: 30, borderRadius: 9, background: '#C9A84C33', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, flexShrink: 0, marginTop: 4, color: 'var(--gold)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
@@ -151,7 +163,7 @@ export default function AIAdvisor() {
           {loading ? <span className="spinner" style={{width:14,height:14}}/> : 'Send ↗'}
         </button>
         {msgs.length > 0 && (
-          <button className="ghost-btn" onClick={() => setMsgs([])} title="Clear chat" style={{ padding: '10px 14px' }}>🗑️</button>
+          <button className="ghost-btn" onClick={() => { setMsgs([]); localStorage.removeItem('aurum_ai_chat'); }} title="Clear chat" style={{ padding: '10px 14px' }}>🗑️</button>
         )}
       </div>
     </div>
