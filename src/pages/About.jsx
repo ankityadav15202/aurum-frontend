@@ -12,7 +12,7 @@ export default function About() {
       </div>
 
       {[
-        { title:'What is Aurum?', icon:'🏦', content:`Aurum is an intelligent personal finance platform that combines the power of Claude AI with beautiful, intuitive expense tracking. It helps individuals understand their spending habits, set budgets, and make smarter financial decisions — all in one place.\n\nThe name "Aurum" is the Latin word for gold — chosen to reflect our belief that financial clarity is one of the most valuable things a person can have.` },
+        { title:'What is Aurum?', icon:'🏦', content:`Aurum is an intelligent personal finance platform that combines the power of AI with beautiful, intuitive expense tracking. It helps individuals understand their spending habits, set budgets, and make smarter financial decisions — all in one place.\n\nThe name "Aurum" is the Latin word for gold — chosen to reflect our belief that financial clarity is one of the most valuable things a person can have.` },
         { title:'Our Mission',    icon:'🎯', content:`Our mission is to make personal finance management genuinely enjoyable and actionable. Most people don't fail financially because they lack willpower — they fail because they lack visibility. Aurum gives you that visibility through clear data, smart AI, and beautiful design.` },
         { title:'Our Vision',     icon:'🔭', content:`We envision a world where everyone — regardless of their financial background — has access to the kind of personalized financial guidance that was previously only available to the wealthy. AI makes this possible at scale.` },
         { title:'Why We Built It', icon:'💡', content:`Aurum was built out of frustration with existing expense trackers that are either too complicated, too ugly, or too shallow. We wanted something that felt premium, was powered by AI, and actually changed behavior — not just tracked it.` },
@@ -34,7 +34,7 @@ export default function About() {
           <h2 style={{ fontFamily:'var(--font-serif)', fontSize:20 }}>Tech Stack</h2>
         </div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:10 }}>
-          {[{l:'Frontend',v:'React + Vite'},{l:'Backend',v:'Node.js + Express'},{l:'Database',v:'MongoDB'},{l:'AI Engine',v:'Claude Sonnet 4'},{l:'Auth',v:'JWT + bcrypt'},{l:'Charts',v:'Recharts'}].map(t => (
+          {[{l:'Frontend',v:'React + Vite'},{l:'Backend',v:'Node.js + Express'},{l:'Database',v:'MongoDB'},{l:'AI Engine',v:'Claude Sonnet 4'},{l:'Data Fetching',v:'TanStack Query'},{l:'Auth',v:'JWT + bcrypt'},{l:'Charts',v:'Recharts'}].map(t => (
             <div key={t.l} style={{ padding:'10px 14px', background:'#1E2A3A55', borderRadius:10 }}>
               <div className="floating-label">{t.l}</div>
               <div style={{ fontSize:13, fontFamily:'var(--font-mono)', color:'var(--gold)' }}>{t.v}</div>

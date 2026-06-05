@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
@@ -8,46 +9,54 @@ import AddExpenseModal from '../components/AddExpenseModal.jsx';
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const [stats,    setStats]    = useState(null);
-  const [expenses, setExpenses] = useState([]);
-  const [budgets,  setBudgets]  = useState([]);
-  const [insights, setInsights] = useState([]);
   const [showAdd,  setShowAdd]  = useState(false);
-  const [loading,  setLoading]  = useState(true);
+  const queryClient = useQueryClient();
 
   const now      = new Date();
   const month    = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const currency = user?.currency || '$';
 
-  const fetchAll = async () => {
-    try {
+  const { data: dashboardData, isLoading, isError } = useQuery({
+    queryKey: ['dashboard', month],
+    queryFn: async () => {
       const [statsRes, expRes, budRes] = await Promise.all([
         api.get(`/expenses/stats?month=${month}`),
         api.get(`/expenses?month=${month}&limit=6&sort=date&order=desc`),
         api.get(`/budgets?month=${month}`),
       ]);
-      setStats(statsRes.data);
-      setExpenses(expRes.data.expenses);
-      setBudgets(budRes.data);
-    } catch { toast.error('Failed to load data'); }
-    setLoading(false);
-  };
+      return {
+        stats: statsRes.data,
+        expenses: expRes.data.expenses,
+        budgets: budRes.data,
+      };
+    },
+  });
 
-  const fetchInsights = async () => {
-    try {
+  const { data: insights = [] } = useQuery({
+    queryKey: ['ai-insights'],
+    queryFn: async () => {
       const { data } = await api.get('/ai/insights');
-      setInsights(data.insights || []);
-    } catch {}
-  };
+      return data.insights || [];
+    },
+  });
 
-  useEffect(() => { fetchAll(); fetchInsights(); }, []);
+  const stats = dashboardData?.stats;
+  const expenses = dashboardData?.expenses || [];
+  const budgets = dashboardData?.budgets || [];
+
+  useEffect(() => {
+    if (isError) toast.error('Failed to load data');
+  }, [isError]);
 
   const handleAdd = async (form) => {
     try {
       await api.post('/expenses', form);
       toast.success('Expense added ✓');
       setShowAdd(false);
-      fetchAll();
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (err) { toast.error(err.response?.data?.message || 'Failed to add'); }
   };
 
@@ -70,7 +79,7 @@ export default function Dashboard() {
   const hr = now.getHours();
   const greeting = hr < 12 ? 'Morning' : hr < 18 ? 'Afternoon' : 'Evening';
 
-  if (loading) return (
+  if (isLoading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:400 }}>
       <div className="spinner" style={{ width:36, height:36 }}/>
     </div>

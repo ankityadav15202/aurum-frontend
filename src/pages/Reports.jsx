@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
@@ -8,29 +9,29 @@ import { CAT_MAP, MONTHS } from '../utils/constants.js';
 export default function Reports() {
   const { user }   = useAuth();
   const currency   = user?.currency || '$';
-  const [reports,  setReports]  = useState([]);
-  const [loading,  setLoading]  = useState(true);
   const [genMonth, setGenMonth] = useState(new Date().toISOString().slice(0,7));
   const [generating, setGenerating] = useState(false);
   const [selected, setSelected] = useState(null);
+  const queryClient = useQueryClient();
 
-  const fetchReports = async () => {
-    try {
+  const { data: reports = [], isLoading: loading } = useQuery({
+    queryKey: ['reports'],
+    queryFn: async () => {
       const { data } = await api.get('/reports');
-      setReports(data);
-      if (data.length > 0 && !selected) setSelected(data[0]);
-    } catch { toast.error('Failed to load reports'); }
-    setLoading(false);
-  };
+      return data;
+    },
+  });
 
-  useEffect(() => { fetchReports(); }, []);
+  useEffect(() => {
+    if (reports.length > 0 && !selected) setSelected(reports[0]);
+  }, [reports, selected]);
 
   const generate = async () => {
     setGenerating(true);
     try {
       const { data } = await api.post('/reports/generate', { month: genMonth });
       toast.success('Report generated ✓');
-      await fetchReports();
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
       setSelected(data);
     } catch { toast.error('Failed to generate report'); }
     setGenerating(false);

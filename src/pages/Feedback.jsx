@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
 
@@ -7,14 +8,18 @@ const PRIORITIES= [{v:'low',l:'Low'},{v:'medium',l:'Medium'},{v:'high',l:'High'}
 
 export default function Feedback() {
   const [form, setForm]       = useState({ type:'general', title:'', description:'', priority:'medium' });
-  const [past, setPast]       = useState([]);
   const [loading, setLoading] = useState(false);
   const [tab, setTab]         = useState('submit');
+  const queryClient = useQueryClient();
   const set = (k,v) => setForm(p => ({...p,[k]:v}));
 
-  useEffect(() => {
-    api.get('/feedback').then(r => setPast(r.data)).catch(() => {});
-  }, []);
+  const { data: past = [] } = useQuery({
+    queryKey: ['feedback'],
+    queryFn: async () => {
+      const { data } = await api.get('/feedback');
+      return data;
+    },
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +28,7 @@ export default function Feedback() {
     try {
       const { data } = await api.post('/feedback', form);
       toast.success('Feedback submitted ✓');
-      setPast(p => [data, ...p]);
+      queryClient.setQueryData(['feedback'], (items = []) => [data, ...items]);
       setForm({ type:'general', title:'', description:'', priority:'medium' });
       setTab('history');
     } catch { toast.error('Failed to submit'); }

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -9,11 +10,7 @@ export default function Transactions() {
   const { user } = useAuth();
   const currency  = user?.currency || '$';
 
-  const [expenses,  setExpenses]  = useState([]);
-  const [total,     setTotal]     = useState(0);
   const [page,      setPage]      = useState(1);
-  const [pages,     setPages]     = useState(1);
-  const [loading,   setLoading]   = useState(true);
   const [showAdd,   setShowAdd]   = useState(false);
   const [editItem,  setEditItem]  = useState(null);
   const [deleteId,  setDeleteId]  = useState(null);
@@ -22,34 +19,39 @@ export default function Transactions() {
   const [catFilter, setCatFilter] = useState('all');
   const [sortBy,    setSortBy]    = useState('date');
   const [month,     setMonth]     = useState('');
+  const queryClient = useQueryClient();
 
   const now = new Date();
   const currentMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-  const fetchExpenses = useCallback(async (pg = 1) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: pg, limit: 20, sort: sortBy, order: 'desc' });
+  useEffect(() => { setPage(1); }, [search, catFilter, sortBy, month]);
+
+  const { data: expenseData, isLoading: loading } = useQuery({
+    queryKey: ['expenses', { page, search, catFilter, sortBy, month }],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page, limit: 20, sort: sortBy, order: 'desc' });
       if (search)    params.set('search', search);
       if (catFilter !== 'all') params.set('cat', catFilter);
       if (month)     params.set('month', month);
       const { data } = await api.get(`/expenses?${params}`);
-      setExpenses(data.expenses);
-      setTotal(data.total);
-      setPages(data.pages);
-      setPage(pg);
-    } catch { toast.error('Failed to load expenses'); }
-    setLoading(false);
-  }, [search, catFilter, sortBy, month]);
+      return data;
+    },
+  });
 
-  useEffect(() => { fetchExpenses(1); }, [fetchExpenses]);
+  const expenses = expenseData?.expenses || [];
+  const total = expenseData?.total || 0;
+  const pages = expenseData?.pages || 1;
 
   const handleAdd = async (form) => {
     try {
       await api.post('/expenses', form);
       toast.success('Expense added ✓');
       setShowAdd(false);
-      fetchExpenses(1);
+      setPage(1);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
@@ -58,7 +60,10 @@ export default function Transactions() {
       await api.put(`/expenses/${editItem._id}`, form);
       toast.success('Updated ✓');
       setEditItem(null);
-      fetchExpenses(page);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
   };
 
@@ -67,7 +72,10 @@ export default function Transactions() {
       await api.delete(`/expenses/${deleteId}`);
       toast.success('Deleted');
       setDeleteId(null);
-      fetchExpenses(page);
+      queryClient.invalidateQueries({ queryKey: ['expenses'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['reports'] });
     } catch { toast.error('Delete failed'); }
   };
 
@@ -180,7 +188,7 @@ export default function Transactions() {
         {pages > 1 && (
           <div style={{ display:'flex', justifyContent:'center', gap:8, padding:'12px 0 4px' }}>
             {Array.from({ length: pages }, (_, i) => i+1).map(p => (
-              <button key={p} onClick={() => fetchExpenses(p)} style={{ width:32, height:32, borderRadius:8, border:`1px solid ${page===p?'var(--gold)':'var(--border)'}`, background: page===p?'var(--gold-dim)':'transparent', color: page===p?'var(--gold)':'var(--text-dim)', cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:12 }}>
+              <button key={p} onClick={() => setPage(p)} style={{ width:32, height:32, borderRadius:8, border:`1px solid ${page===p?'var(--gold)':'var(--border)'}`, background: page===p?'var(--gold-dim)':'transparent', color: page===p?'var(--gold)':'var(--text-dim)', cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:12 }}>
                 {p}
               </button>
             ))}

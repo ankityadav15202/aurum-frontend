@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
@@ -11,25 +12,23 @@ export default function Budgets() {
   const now        = new Date();
   const month      = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
-  const [budgets,  setBudgets]  = useState([]);
-  const [stats,    setStats]    = useState(null);
   const [editing,  setEditing]  = useState(null);
   const [val,      setVal]      = useState('');
-  const [loading,  setLoading]  = useState(true);
+  const queryClient = useQueryClient();
 
-  const fetchData = async () => {
-    try {
+  const { data, isLoading: loading } = useQuery({
+    queryKey: ['budgets', month],
+    queryFn: async () => {
       const [bRes, sRes] = await Promise.all([
         api.get(`/budgets?month=${month}`),
         api.get(`/expenses/stats?month=${month}`),
       ]);
-      setBudgets(bRes.data);
-      setStats(sRes.data);
-    } catch { toast.error('Failed to load'); }
-    setLoading(false);
-  };
+      return { budgets: bRes.data, stats: sRes.data };
+    },
+  });
 
-  useEffect(() => { fetchData(); }, []);
+  const budgets = data?.budgets || [];
+  const stats = data?.stats || null;
 
   const saveBudget = async (catId) => {
     const n = parseFloat(val);
@@ -38,7 +37,8 @@ export default function Budgets() {
       await api.post('/budgets', { category: catId, amount: n, month });
       toast.success('Budget saved ✓');
       setEditing(null); setVal('');
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     } catch { toast.error('Failed to save budget'); }
   };
 
@@ -46,7 +46,8 @@ export default function Budgets() {
     try {
       await api.delete(`/budgets/${catId}?month=${month}`);
       toast.success('Budget removed');
-      fetchData();
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     } catch { toast.error('Failed to remove'); }
   };
 

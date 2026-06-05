@@ -1,4 +1,6 @@
-import { Routes, Route, Navigate, NavLink, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useIsFetching, useQueryClient } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 import { useAuth } from './context/AuthContext.jsx';
 
 // Public pages
@@ -57,12 +59,32 @@ function PublicOnlyRoute({ children }) {
 function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
 
   const handleLogout = () => { logout(); navigate('/'); };
   const navIcon = (item) => {
     if (item.label === 'Reports') return '\u25A5';
     if (item.label === 'Feedback') return '\u2709\uFE0E';
     return item.icon;
+  };
+  const refreshKeysByPath = {
+    '/dashboard': [['dashboard'], ['ai-insights']],
+    '/transactions': [['expenses']],
+    '/budgets': [['budgets']],
+    '/reports': [['reports']],
+    '/feedback': [['feedback']],
+  };
+  const refreshKeys = refreshKeysByPath[location.pathname] || [];
+  const isRefreshing = useIsFetching();
+  const refreshPage = async () => {
+    const toastId = toast.loading('Refreshing...');
+    try {
+      await Promise.all(refreshKeys.map(queryKey => queryClient.invalidateQueries({ queryKey })));
+      toast.success('Data refreshed', { id: toastId });
+    } catch {
+      toast.error('Refresh failed', { id: toastId });
+    }
   };
 
   return (
@@ -94,7 +116,21 @@ function Layout({ children }) {
         </div>
       </aside>
 
-      <main className="main-content">{children}</main>
+      <main className={`main-content${refreshKeys.length > 0 ? ' has-page-refresh' : ''}`}>
+        {refreshKeys.length > 0 && (
+          <button
+            className="page-refresh-btn"
+            type="button"
+            onClick={refreshPage}
+            disabled={isRefreshing > 0}
+            title="Refresh this page"
+            aria-label="Refresh this page"
+          >
+            <span>{'\u21bb'}</span>
+          </button>
+        )}
+        {children}
+      </main>
     </div>
   );
 }
