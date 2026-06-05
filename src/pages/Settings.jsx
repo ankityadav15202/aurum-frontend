@@ -68,9 +68,9 @@ export default function Settings() {
       </div>
 
       {/* Tab nav */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 12, padding: 4, width: 'fit-content' }}>
+      <div className="settings-tabs">
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} style={{ background: tab===t ? 'var(--gold-dim)' : 'transparent', border: `1px solid ${tab===t ? '#C9A84C44' : 'transparent'}`, color: tab===t ? 'var(--gold)' : 'var(--text-dim)', borderRadius: 9, padding: '7px 18px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: 12, textTransform: 'capitalize', transition: 'all .2s' }}>
+          <button key={t} onClick={() => setTab(t)} className={tab===t ? 'active' : ''}>
             {t}
           </button>
         ))}
@@ -78,15 +78,15 @@ export default function Settings() {
 
       {/* Profile tab */}
       {tab === 'profile' && (
-        <div className="card" style={{ maxWidth: 520 }}>
+        <div className="card settings-card" style={{ maxWidth: 520 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>👤 Profile</div>
 
           {/* Avatar circle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: '16px', background: '#1E2A3A44', borderRadius: 12 }}>
+          <div className="settings-profile-summary" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: '16px', background: '#1E2A3A44', borderRadius: 12 }}>
             <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--gold),#E8C66B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--bg)', fontFamily: 'var(--font-serif)' }}>
               {user?.name?.[0]?.toUpperCase()}
             </div>
-            <div>
+            <div className="settings-profile-copy">
               <div style={{ fontSize: 16, color: 'var(--text)' }}>{user?.name}</div>
               <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>{user?.email}</div>
             </div>
@@ -111,7 +111,7 @@ export default function Settings() {
 
       {/* Security tab */}
       {tab === 'security' && (
-        <div className="card" style={{ maxWidth: 520 }}>
+        <div className="card settings-card" style={{ maxWidth: 520 }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>🔒 Change Password</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
@@ -134,9 +134,9 @@ export default function Settings() {
 
       {/* Currency tab */}
       {tab === 'currency' && (
-        <div className="card">
+        <div className="card settings-card">
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>🌍 Currency</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10 }}>
+          <div className="settings-currency-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10 }}>
             {CURRENCIES.map(c => (
               <div key={c.s} onClick={() => saveCurrency(c.s)} style={{ padding: '14px 16px', borderRadius: 12, border: `1px solid ${user?.currency===c.s ? '#C9A84C88' : 'var(--border)'}`, cursor: 'pointer', background: user?.currency===c.s ? 'var(--gold-dim)' : 'transparent', transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <span style={{ fontSize: 20, fontFamily: 'var(--font-mono)', fontWeight: 700, color: user?.currency===c.s ? 'var(--gold)' : 'var(--text)', minWidth: 28 }}>{c.s}</span>
@@ -150,13 +150,13 @@ export default function Settings() {
 
       {/* Danger zone tab */}
       {tab === 'danger' && (
-        <div className="card" style={{ maxWidth: 520, border: '1px solid #FF6B6B33' }}>
+        <div className="card settings-card" style={{ maxWidth: 520, border: '1px solid #FF6B6B33' }}>
           <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 6, color: '#FF6B6B' }}>⚠️ Danger Zone</div>
           <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginBottom: 24 }}>These actions are permanent and cannot be undone.</p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Clear expenses */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
+            <div className="settings-danger-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
               <div>
                 <div style={{ fontSize: 14 }}>Clear All Expenses</div>
                 <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>Delete every transaction permanently</div>
@@ -164,7 +164,7 @@ export default function Settings() {
               {!confirmClear ? (
                 <button className="ghost-btn" style={{ borderColor: '#FF6B6B44', color: '#FF6B6B' }} onClick={() => setConfirmClear(true)}>Clear Data</button>
               ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="settings-danger-actions" style={{ display: 'flex', gap: 8 }}>
                   <button className="ghost-btn" onClick={() => setConfirmClear(false)}>Cancel</button>
                   <button className="gold-btn" style={{ background: 'linear-gradient(135deg,#FF6B6B,#EF4444)' }} onClick={clearAllData}>Confirm</button>
                 </div>
@@ -172,7 +172,7 @@ export default function Settings() {
             </div>
 
             {/* Logout */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
+            <div className="settings-danger-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
               <div>
                 <div style={{ fontSize: 14 }}>Sign Out</div>
                 <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>Log out of your account</div>
@@ -184,12 +184,12 @@ export default function Settings() {
       )}
 
       {/* App info footer */}
-      <div style={{ marginTop: 32, padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+      <div className="settings-app-info" style={{ marginTop: 32, padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
         {[
           { l: 'App',        v: 'Aurum v2.0' },
-          { l: 'Stack',      v: 'MERN + Claude AI' },
-          { l: 'AI Model',   v: 'Claude Sonnet 4' },
-          { l: 'Database',   v: 'MongoDB' },
+          { l: 'Stack',      v: 'MERN + AI' },
+          // { l: 'AI Model',   v: 'Claude Sonnet 4' },
+          // { l: 'Database',   v: 'MongoDB' },
         ].map(r => (
           <div key={r.l}>
             <div className="floating-label">{r.l}</div>

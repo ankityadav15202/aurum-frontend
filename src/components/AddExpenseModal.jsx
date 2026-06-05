@@ -2,6 +2,13 @@ import { useState } from 'react';
 import api from '../utils/api.js';
 import { CATS } from '../utils/constants.js';
 
+const RECURRING_INTERVALS = [
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'monthly', label: 'Monthly' },
+  { value: 'yearly', label: 'Yearly' },
+];
+
 export default function AddExpenseModal({ onClose, onSave, existing, currency = '$' }) {
   const [form, setForm] = useState({
     desc:   existing?.desc   || '',
@@ -14,8 +21,10 @@ export default function AddExpenseModal({ onClose, onSave, existing, currency = 
   });
   const [aiLoading, setAiLoading] = useState(false);
   const [saving,    setSaving]    = useState(false);
+  const [intervalOpen, setIntervalOpen] = useState(false);
 
   const set = (k, v) => setForm(p => ({...p, [k]: v}));
+  const recurringLabel = RECURRING_INTERVALS.find(i => i.value === (form.recurringInterval || 'monthly'))?.label || 'Monthly';
 
   const aiCategorize = async () => {
     if (!form.desc.trim()) return;
@@ -31,7 +40,11 @@ export default function AddExpenseModal({ onClose, onSave, existing, currency = 
     if (!form.desc.trim() || !form.amount || isNaN(parseFloat(form.amount))) return;
     setSaving(true);
     try {
-      await onSave({ ...form, amount: parseFloat(form.amount) });
+      await onSave({
+        ...form,
+        amount: parseFloat(form.amount),
+        recurringInterval: form.isRecurring ? (form.recurringInterval || 'monthly') : null,
+      });
     } finally {
       setSaving(false);
     }
@@ -92,15 +105,33 @@ export default function AddExpenseModal({ onClose, onSave, existing, currency = 
           </div>
 
           {/* Recurring */}
-          <div style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'#1E2A3A44', borderRadius:10 }}>
-            <input type="checkbox" id="recurring" checked={form.isRecurring} onChange={e => set('isRecurring', e.target.checked)} style={{ accentColor:'var(--gold)', width:16, height:16, cursor:'pointer' }}/>
+          <div className="recurring-row" style={{ display:'flex', alignItems:'center', gap:12, padding:'10px 14px', background:'#1E2A3A44', borderRadius:10 }}>
+            <input type="checkbox" id="recurring" checked={form.isRecurring} onChange={e => setForm(p => ({ ...p, isRecurring: e.target.checked, recurringInterval: e.target.checked ? (p.recurringInterval || 'monthly') : null }))} style={{ accentColor:'var(--gold)', width:16, height:16, cursor:'pointer' }}/>
             <label htmlFor="recurring" style={{ fontSize:13, cursor:'pointer' }}>Recurring expense</label>
             {form.isRecurring && (
-              <select className="input" style={{ width:'auto', flex:1 }} value={form.recurringInterval||'monthly'} onChange={e => set('recurringInterval', e.target.value)}>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
-              </select>
+              <div className="recurring-select">
+                <button type="button" className="recurring-select-trigger" onClick={() => setIntervalOpen(open => !open)}>
+                  <span>{recurringLabel}</span>
+                  <span className="recurring-select-arrow">v</span>
+                </button>
+                {intervalOpen && (
+                  <div className="recurring-select-menu">
+                    {RECURRING_INTERVALS.map(interval => (
+                      <button
+                        type="button"
+                        key={interval.value}
+                        className={interval.value === (form.recurringInterval || 'monthly') ? 'active' : ''}
+                        onClick={() => {
+                          set('recurringInterval', interval.value);
+                          setIntervalOpen(false);
+                        }}
+                      >
+                        {interval.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             )}
           </div>
 

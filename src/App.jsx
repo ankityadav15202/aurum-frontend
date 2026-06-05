@@ -59,6 +59,11 @@ function Layout({ children }) {
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/'); };
+  const navIcon = (item) => {
+    if (item.label === 'Reports') return '\u25A5';
+    if (item.label === 'Feedback') return '\u2709\uFE0E';
+    return item.icon;
+  };
 
   return (
     <div className="app-layout">
@@ -71,7 +76,7 @@ function Layout({ children }) {
 
         {NAV.map(n => (
           <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-            <span style={{ fontSize:15, flexShrink:0 }}>{n.icon}</span>
+            <span style={{ fontSize:15, flexShrink:0 }}>{navIcon(n)}</span>
             <span className="nav-label">{n.label}</span>
             {n.badge && <span className="nav-label" style={{ marginLeft:'auto', background:'#C9A84C22', color:'var(--gold)', fontSize:9, padding:'2px 6px', borderRadius:8 }}>{n.badge}</span>}
           </NavLink>
