@@ -153,6 +153,8 @@ select.input { appearance: none; }
   padding: 28px 28px 60px;
   overflow-x: hidden;
   max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .page-refresh-btn {
