@@ -62,7 +62,11 @@ function Layout({ children }) {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const handleLogout = () => { logout(); navigate('/'); };
+  const handleLogout = () => { 
+    logout(); 
+    queryClient.clear();
+    navigate('/'); 
+  };
   const navIcon = (item) => {
     if (item.label === 'Reports') return '\u25A5';
     if (item.label === 'Feedback') return '\u2709\uFE0E';
