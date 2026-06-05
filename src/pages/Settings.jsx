@@ -188,7 +188,7 @@ export default function Settings() {
         {[
           { l: 'App',        v: 'Aurum v2.0' },
           { l: 'Stack',      v: 'MERN + AI' },
-          // { l: 'AI Model',   v: 'Claude Sonnet 4' },
+          // { l: 'AI Model',   v: 'Gemini' },
           // { l: 'Database',   v: 'MongoDB' },
         ].map(r => (
           <div key={r.l}>

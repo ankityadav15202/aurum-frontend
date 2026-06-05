@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 const FEATURES = [
   { icon:'🍽️', title:'Expense Tracking',       desc:'Log every transaction in seconds with smart AI auto-categorization across 10 categories.' },
   { icon:'🎯', title:'Budget Management',       desc:'Set monthly budgets per category and get real-time alerts before you overspend.' },
-  { icon:'✦',  title:'AI Financial Advisor',   desc:'Chat with Claude AI using your real spending data for personalized financial advice.' },
+  { icon:'✦',  title:'AI Financial Advisor',   desc:'Chat with Gemini AI using your real spending data for personalized financial advice.' },
   { icon:'📊', title:'Financial Insights',      desc:'Beautiful charts and auto-generated monthly insights to understand your money habits.' },
   { icon:'🏆', title:'Goal Tracking',           desc:'Set savings goals and track progress month over month. (Coming Soon)' },
   { icon:'☁️', title:'Secure Cloud Storage',   desc:'Your data is encrypted, backed up, and accessible from any device.' },
@@ -26,10 +26,10 @@ const TESTIMONIALS = [
 ];
 
 const FAQS = [
-  { q:'What is Aurum?',              a:'Aurum is an AI-powered personal finance tracker that helps you log expenses, set budgets, and receive personalized financial advice powered by Claude AI.' },
+  { q:'What is Aurum?',              a:'Aurum is an AI-powered personal finance tracker that helps you log expenses, set budgets, and receive personalized financial advice powered by Gemini AI.' },
   { q:'Is my data secure?',          a:'Yes. All data is encrypted in transit and at rest. We use MongoDB with strict access controls, and your API keys are never exposed to the browser.' },
   { q:'Can I use multiple currencies?', a:'Absolutely. Aurum supports USD, EUR, GBP, JPY, INR, KRW, AUD, and CAD. You can change your currency anytime from Settings.' },
-  { q:'How does the AI help?',       a:'The AI Advisor (powered by Claude) has full access to your transaction history, budgets, and spending patterns. It provides personalized insights, forecasts, and savings tips in a conversational format.' },
+  { q:'How does the AI help?',       a:'The AI Advisor (powered by Gemini) has full access to your transaction history, budgets, and spending patterns. It provides personalized insights, forecasts, and savings tips in a conversational format.' },
 ];
 
 export default function Landing() {
@@ -71,7 +71,7 @@ export default function Landing() {
             Take Control of Your<br/><span style={{ color:'#C9A84C' }}>Money with AI</span>
           </h1>
           <p style={{ fontSize:'clamp(15px,2vw,19px)', color:'#8A9AAE', lineHeight:1.8, marginBottom:40, maxWidth:560, margin:'0 auto 40px' }}>
-            Track expenses, manage budgets, and get personalized financial advice powered by Claude AI — all in one beautiful app.
+            Track expenses, manage budgets, and get personalized financial advice powered by Gemini AI - all in one beautiful app.
           </p>
           <div className="hero-btns" style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
             <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'15px 36px', borderRadius:12, fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:14, textDecoration:'none', letterSpacing:.5 }}>Get Started Free →</Link>

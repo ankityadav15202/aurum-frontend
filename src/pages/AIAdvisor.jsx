@@ -56,7 +56,7 @@ export default function AIAdvisor() {
           <div style={{ width: 42, height: 42, borderRadius: 13, background: 'linear-gradient(135deg,#C9A84C22,#C9A84C44)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>✦</div>
           <div>
             <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 26, fontWeight: 600 }}>AI Financial Advisor</h1>
-            <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>Powered by Claude · Analyzes your real spending data</p>
+            <p style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>Powered by Gemini · Analyzes your real spending data</p>
           </div>
         </div>
       </div>

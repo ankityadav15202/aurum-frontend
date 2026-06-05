@@ -125,7 +125,7 @@ export default function Onboarding() {
             <p style={{ fontSize:13, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>{curStep.sub}</p>
           </div>
 
-          {/* Step 1 — Currency */}
+          {/* Step 1 - Currency */}
           {step === 1 && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8 }}>
@@ -140,7 +140,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 2 — Income */}
+          {/* Step 2 - Income */}
           {step === 2 && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
@@ -151,7 +151,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 3 — Budget */}
+          {/* Step 3 - Budget */}
           {step === 3 && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
@@ -168,7 +168,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 4 — Transaction */}
+          {/* Step 4 - Transaction */}
           {step === 4 && (
             <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
               <div>
@@ -189,7 +189,7 @@ export default function Onboarding() {
             </div>
           )}
 
-          {/* Step 5 — Done */}
+          {/* Step 5 - Done */}
           {step === 5 && (
             <div style={{ textAlign:'center', display:'flex', flexDirection:'column', gap:16 }}>
               <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8, fontFamily:'var(--font-mono)' }}>

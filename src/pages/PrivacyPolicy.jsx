@@ -21,7 +21,7 @@ export default function PrivacyPolicy() {
         <p>We use JWT tokens for authentication, which are stored in your browser's localStorage and expire after 7 days.</p>
       </Section>
       <Section title="3. How AI Processes Your Data">
-        <p>When you use the AI Advisor feature, your <strong>transaction history, budget data, and spending summaries</strong> are sent to Anthropic's Claude API to generate personalized responses. This data is used solely for generating your response and is subject to <strong>Anthropic's Privacy Policy</strong>.</p><br/>
+        <p>When you use the AI Advisor feature, your <strong>transaction history, budget data, and spending summaries</strong> are sent to Anthropic's Gemini API to generate personalized responses. This data is used solely for generating your response and is subject to <strong>Anthropic's Privacy Policy</strong>.</p><br/>
         <p>We do not store your AI conversation history on our servers. Conversations exist only in your current browser session.</p>
       </Section>
       <Section title="4. Cookie Usage">

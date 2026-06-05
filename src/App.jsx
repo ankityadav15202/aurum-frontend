@@ -94,7 +94,7 @@ function Layout({ children }) {
   return (
     <div className="app-layout">
       <aside className="sidebar">
-        {/* Logo — hidden on mobile */}
+        {/* Logo - hidden on mobile */}
         <div style={{ marginBottom:24, paddingLeft:4 }}>
           <div style={{ fontFamily:'var(--font-serif)', fontSize:22, fontWeight:700, color:'var(--gold)', letterSpacing:1 }} className="logo-text">✦ Aurum</div>
           <div style={{ fontSize:9, fontFamily:'var(--font-mono)', color:'#3A4A5E', letterSpacing:2, marginTop:2 }} className="logo-text">EXPENSE TRACKER</div>
@@ -108,7 +108,7 @@ function Layout({ children }) {
           </NavLink>
         ))}
 
-        {/* Logout — hidden on mobile (in settings instead) */}
+        {/* Logout - hidden on mobile (in settings instead) */}
         <div style={{ marginTop:'auto', paddingTop:16, borderTop:'1px solid var(--border)' }}>
           <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginBottom:8, paddingLeft:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} className="nav-label">
             {user?.name}

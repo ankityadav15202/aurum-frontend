@@ -142,7 +142,7 @@ export default function Reports() {
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
                     <span style={{ fontSize:16 }}>✦</span>
                     <div className="floating-label" style={{ marginBottom:0 }}>AI Financial Analysis</div>
-                    <span style={{ fontSize:9, background:'var(--gold-dim)', color:'var(--gold)', padding:'2px 8px', borderRadius:8, fontFamily:'var(--font-mono)' }}>CLAUDE</span>
+                    <span style={{ fontSize:9, background:'var(--gold-dim)', color:'var(--gold)', padding:'2px 8px', borderRadius:8, fontFamily:'var(--font-mono)' }}>Gemini</span>
                   </div>
                   <p style={{ fontSize:14, color:'var(--text-muted)', lineHeight:1.8 }}>{selected.aiSummary}</p>
                 </div>

@@ -2,7 +2,7 @@ const CACHE_NAME   = 'aurum-v2';
 const OFFLINE_URL  = '/offline.html';
 const STATIC_ASSETS = ['/', '/offline.html', '/manifest.json'];
 
-// Install — cache core assets
+// Install - cache core assets
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -11,7 +11,7 @@ self.addEventListener('install', event => {
   );
 });
 
-// Activate — clean old caches
+// Activate - clean old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
@@ -20,7 +20,7 @@ self.addEventListener('activate', event => {
   );
 });
 
-// Fetch — network first, fallback to cache, then offline page
+// Fetch - network first, fallback to cache, then offline page
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   if (event.request.url.includes('/api/')) return; // Never cache API calls

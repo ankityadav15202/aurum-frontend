@@ -207,7 +207,7 @@ export default function Dashboard() {
         <div className="card">
           <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
             <div className="floating-label" style={{marginBottom:0}}>AI Insights</div>
-            <span style={{ fontSize:9, background:'#C9A84C22', color:'var(--gold)', padding:'2px 8px', borderRadius:8, fontFamily:'var(--font-mono)' }}>POWERED BY CLAUDE</span>
+            <span style={{ fontSize:9, background:'#C9A84C22', color:'var(--gold)', padding:'2px 8px', borderRadius:8, fontFamily:'var(--font-mono)' }}>POWERED BY Gemini</span>
           </div>
           {insights.length === 0 ? (
             <div style={{ fontSize:12, color:'var(--text-dim)', fontFamily:'var(--font-mono)', textAlign:'center', paddingTop:20 }}>
