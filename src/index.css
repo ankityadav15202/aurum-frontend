@@ -209,6 +209,18 @@ select.input { appearance: none; }
 .nav-item:hover { background: var(--gold-dim); color: var(--gold); }
 .nav-item.active { background: var(--gold-dim); color: var(--gold); border-left-color: var(--gold); }
 
+.logo-link {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+.logo-link:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.logo-link:active {
+  transform: translateY(0);
+}
+
 /* ── Modals ──────────────────────────────────────────────── */
 .modal-overlay {
   position: fixed;

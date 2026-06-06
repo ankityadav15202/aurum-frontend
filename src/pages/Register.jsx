@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 export default function Register() {
   const [form, setForm]   = useState({ name:'', email:'', password:'' });
   const [loading, setLoading] = useState(false);
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -27,8 +27,10 @@ export default function Register() {
     <div className="auth-page">
       <div style={{ width:'100%', maxWidth:420 }}>
         <div style={{ textAlign:'center', marginBottom:40 }}>
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:38, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>Aurum</div>
-          <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', letterSpacing:3, marginTop:4 }}>EXPENSE TRACKER</div>
+          <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ textDecoration:'none', display:'inline-block' }} className="logo-link">
+            <div style={{ fontFamily:'var(--font-serif)', fontSize:38, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>Aurum</div>
+            <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', letterSpacing:3, marginTop:4 }}>EXPENSE TRACKER</div>
+          </Link>
         </div>
 
         <div className="card" style={{ padding:32 }}>

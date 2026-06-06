@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -97,7 +97,9 @@ export default function Onboarding() {
       <div style={{ width:'100%', maxWidth:520 }}>
         {/* Header */}
         <div style={{ textAlign:'center', marginBottom:32 }}>
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:700, color:'var(--gold)', letterSpacing:1, marginBottom:4 }}>✦ Aurum</div>
+          <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ textDecoration:'none', display:'inline-block' }} className="logo-link">
+            <div style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:700, color:'var(--gold)', letterSpacing:1, marginBottom:4 }}>✦ Aurum</div>
+          </Link>
           <p style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>Let's set up your account</p>
         </div>
 

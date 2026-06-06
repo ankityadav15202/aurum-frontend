@@ -7,7 +7,7 @@ export default function Login() {
   const [form, setForm]     = useState({ email:'', password:'' });
   const [loading, setLoading] = useState(false);
   const [needsVerify, setNeedsVerify] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate  = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -28,8 +28,10 @@ export default function Login() {
     <div className="auth-page">
       <div style={{ width:'100%', maxWidth:420 }}>
         <div style={{ textAlign:'center', marginBottom:36 }}>
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:36, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>✦ Aurum</div>
-          <div style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-dim)', letterSpacing:3, marginTop:4 }}>EXPENSE TRACKER</div>
+          <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ textDecoration:'none', display:'inline-block' }} className="logo-link">
+            <div style={{ fontFamily:'var(--font-serif)', fontSize:36, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>✦ Aurum</div>
+            <div style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-dim)', letterSpacing:3, marginTop:4 }}>EXPENSE TRACKER</div>
+          </Link>
         </div>
 
         <div className="card" style={{ padding:32 }}>

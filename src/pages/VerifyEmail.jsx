@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import api from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function VerifyEmail() {
   const { token } = useParams();
@@ -8,6 +9,7 @@ export default function VerifyEmail() {
   const [resendEmail, setResendEmail] = useState('');
   const [resendSent,  setResendSent]  = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (!token) { setStatus('error'); return; }
@@ -29,7 +31,11 @@ export default function VerifyEmail() {
   return (
     <div className="auth-page">
       <div style={{ width:'100%', maxWidth:440, textAlign:'center' }}>
-        <div style={{ fontFamily:'var(--font-serif)', fontSize:34, fontWeight:700, color:'var(--gold)', marginBottom:32, letterSpacing:2 }}>✦ Aurum</div>
+        <div style={{ textAlign:'center', marginBottom:32 }}>
+          <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ textDecoration:'none', display:'inline-block' }} className="logo-link">
+            <div style={{ fontFamily:'var(--font-serif)', fontSize:34, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>✦ Aurum</div>
+          </Link>
+        </div>
 
         {status === 'loading' && (
           <div className="card" style={{ padding:40 }}>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import api from '../utils/api.js';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const rules = [
   { test: v => v.length >= 8,    label: 'At least 8 characters' },
@@ -16,6 +17,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error,   setError]   = useState('');
   const [success, setSuccess] = useState(false);
+  const { user } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,7 +39,9 @@ export default function ResetPassword() {
     <div className="auth-page">
       <div style={{ width:'100%', maxWidth:420 }}>
         <div style={{ textAlign:'center', marginBottom:36 }}>
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:34, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>✦ Aurum</div>
+          <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ textDecoration:'none', display:'inline-block' }} className="logo-link">
+            <div style={{ fontFamily:'var(--font-serif)', fontSize:34, fontWeight:700, color:'var(--gold)', letterSpacing:2 }}>✦ Aurum</div>
+          </Link>
         </div>
         <div className="card" style={{ padding:32 }}>
           {success ? (

@@ -51,7 +51,7 @@ export default function Landing() {
 
       {/* NAV */}
       <nav className="land-nav" style={{ position:'sticky', top:0, zIndex:50, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E2A3A', padding:'14px 40px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, fontWeight:700, color:'#C9A84C', letterSpacing:1 }}>✦ Aurum</div>
+        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, fontWeight:700, color:'#C9A84C', letterSpacing:1, textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
         <div style={{ display:'flex', gap:28, alignItems:'center' }}>
           <a href="#features">Features</a>
           <a href="#benefits">Why Aurum</a>
@@ -163,7 +163,7 @@ export default function Landing() {
 
       {/* FOOTER */}
       <footer style={{ background:'#0D1321', borderTop:'1px solid #1E2A3A', padding:'32px 40px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
-        <div style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:'#C9A84C' }}>✦ Aurum</div>
+        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:'#C9A84C', textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
         <div style={{ display:'flex', gap:24, flexWrap:'wrap' }}>
           {[{to:'/about','l':'About'},{to:'/contact','l':'Contact'},{to:'/privacy-policy','l':'Privacy Policy'},{to:'/terms','l':'Terms of Service'}].map(l => (
             <Link key={l.to} to={l.to} style={{ color:'#4A5A6E', textDecoration:'none', fontSize:12, fontFamily:"'DM Mono',monospace", transition:'color .2s' }}

@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { useAuth } from './context/AuthContext.jsx';
@@ -95,10 +95,14 @@ function Layout({ children }) {
     <div className="app-layout">
       <aside className="sidebar">
         {/* Logo - hidden on mobile */}
-        <div style={{ marginBottom:24, paddingLeft:4 }}>
+        <Link 
+          to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} 
+          style={{ marginBottom:24, paddingLeft:4, textDecoration:'none', display:'block' }}
+          className="logo-link"
+        >
           <div style={{ fontFamily:'var(--font-serif)', fontSize:22, fontWeight:700, color:'var(--gold)', letterSpacing:1 }} className="logo-text">✦ Aurum</div>
           <div style={{ fontSize:9, fontFamily:'var(--font-mono)', color:'#3A4A5E', letterSpacing:2, marginTop:2 }} className="logo-text">EXPENSE TRACKER</div>
-        </div>
+        </Link>
 
         {NAV.map(n => (
           <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
@@ -141,10 +145,11 @@ function Layout({ children }) {
 
 // ── Shared page wrapper for public info pages ─────────
 function PublicLayout({ children }) {
+  const { user } = useAuth();
   return (
     <div style={{ minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
       <nav style={{ position:'sticky', top:0, zIndex:50, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid var(--border)', padding:'14px 28px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <NavLink to="/" style={{ fontFamily:'var(--font-serif)', fontSize:20, fontWeight:700, color:'var(--gold)', letterSpacing:1, textDecoration:'none' }}>✦ Aurum</NavLink>
+        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:'var(--font-serif)', fontSize:20, fontWeight:700, color:'var(--gold)', letterSpacing:1, textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
         <div style={{ display:'flex', gap:16 }}>
           <NavLink to="/login"    style={{ color:'var(--text-muted)', textDecoration:'none', fontSize:13, fontFamily:'var(--font-mono)' }}>Login</NavLink>
           <NavLink to="/register" style={{ background:'var(--gold-dim)', border:'1px solid #C9A84C44', color:'var(--gold)', textDecoration:'none', fontSize:12, fontFamily:'var(--font-mono)', padding:'6px 16px', borderRadius:8 }}>Register</NavLink>
