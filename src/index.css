@@ -118,12 +118,14 @@ select.input { appearance: none; }
 }
 
 .spinner {
-  width: 20px; height: 20px;
-  border: 2px solid #C9A84C33;
+  width: 20px;
+  height: 20px;
+  border: 3px solid rgba(201,168,76,.22);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin .7s linear infinite;
   display: inline-block;
+  box-shadow: 0 0 0 1px rgba(255,255,255,.05);
 }
 
 /* ── Layout ──────────────────────────────────────────────── */
