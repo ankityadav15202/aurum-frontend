@@ -15,6 +15,7 @@ export default function Settings() {
   // Password
   const [pwForm,   setPwForm]   = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [pwSaving, setPwSaving] = useState(false);
+  const [showPw,   setShowPw]   = useState({ currentPassword: false, newPassword: false, confirm: false });
 
   // Danger zone
   const [confirmClear, setConfirmClear] = useState(false);
@@ -87,7 +88,12 @@ export default function Settings() {
               {user?.name?.[0]?.toUpperCase()}
             </div>
             <div className="settings-profile-copy">
-              <div style={{ fontSize: 16, color: 'var(--text)' }}>{user?.name}</div>
+              <div style={{ fontSize: 16, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>{user?.name}</span>
+                {user?.unlimitedAI && (
+                  <span style={{ background:'linear-gradient(135deg,var(--gold),#E8C66B)', color:'#080C14', fontSize:9, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase', flexShrink:0 }}>PRO</span>
+                )}
+              </div>
               <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>{user?.email}</div>
             </div>
           </div>
@@ -121,8 +127,43 @@ export default function Settings() {
             ].map(f => (
               <div key={f.key}>
                 <div className="floating-label">{f.label}</div>
-                <input className="input" type="password" placeholder={f.placeholder}
-                  value={pwForm[f.key]} onChange={e => setPwForm(p => ({...p, [f.key]: e.target.value}))}/>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input className="input" type={showPw[f.key] ? "text" : "password"} placeholder={f.placeholder}
+                    value={pwForm[f.key]} onChange={e => setPwForm(p => ({...p, [f.key]: e.target.value}))} style={{ paddingRight: '40px' }} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(p => ({ ...p, [f.key]: !p[f.key] }))}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--text-dim)',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gold)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}
+                  >
+                    {showPw[f.key] ? (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
+                        <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
+                        <line x1="2" y1="2" x2="22" y2="22"/>
+                      </svg>
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    )}
+                  </button>
+                </div>
               </div>
             ))}
             <button className="gold-btn shine" onClick={savePassword} disabled={pwSaving || !pwForm.currentPassword || !pwForm.newPassword}>

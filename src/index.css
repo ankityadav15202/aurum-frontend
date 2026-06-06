@@ -393,6 +393,12 @@ select.input { appearance: none; }
 
 /* ── Mobile Responsiveness ───────────────────────────── */
 @media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+  .mobile-header {
+    display: flex !important;
+  }
   .sidebar {
     position: fixed; bottom: 0; left: 0; right: 0;
     width: 100%; min-height: 0; height: calc(64px + env(safe-area-inset-bottom)); top: auto;

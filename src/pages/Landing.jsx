@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const FEATURES = [
@@ -35,7 +35,20 @@ const FAQS = [
 export default function Landing() {
   const { user }   = useAuth();
   const navigate   = useNavigate();
+  const [menuOpen, setMenuOpen] = useState(false);
+
   useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
+
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [menuOpen]);
 
   return (
     <div style={{ fontFamily:"'Georgia',serif", background:'#080C14', color:'#E8DCC8', overflowX:'hidden' }}>
@@ -46,13 +59,89 @@ export default function Landing() {
         .faq-item summary::after { content:'＋'; color:#C9A84C; font-size:18px; }
         details[open] summary::after { content:'－'; }
         .faq-item p { color:#8A9AAE; font-size:14px; line-height:1.8; padding-bottom:16px; }
-        @media(max-width:768px){ .hero-btns{flex-direction:column;align-items:center} .feat-grid{grid-template-columns:1fr!important} .ben-grid{grid-template-columns:1fr!important} .test-grid{grid-template-columns:1fr!important} }
+        
+        .burger-btn {
+          display: none;
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          padding: 0;
+          z-index: 100;
+          position: relative;
+          flex-direction: column;
+          justify-content: space-between;
+          width: 24px;
+          height: 18px;
+        }
+        .burger-line {
+          width: 100%;
+          height: 2px;
+          background-color: #E8DCC8;
+          transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
+        }
+        .burger-btn.open .line-1 {
+          transform: translateY(8px) rotate(45deg);
+          background-color: #C9A84C;
+        }
+        .burger-btn.open .line-2 {
+          opacity: 0;
+        }
+        .burger-btn.open .line-3 {
+          transform: translateY(-8px) rotate(-45deg);
+          background-color: #C9A84C;
+        }
+
+        .mobile-nav-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: #080C14FC;
+          backdrop-filter: blur(24px);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 24px;
+          padding: 24px;
+          z-index: 98;
+          opacity: 0;
+          pointer-events: none;
+          transform: translateY(-20px);
+          transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .mobile-nav-overlay.open {
+          opacity: 1;
+          pointer-events: auto;
+          transform: translateY(0);
+        }
+        .mobile-nav-overlay a {
+          font-size: 18px;
+          font-family: 'DM Mono', monospace;
+          color: #8A9AAE;
+          text-decoration: none;
+          transition: color 0.2s, transform 0.2s;
+        }
+        .mobile-nav-overlay a:hover {
+          color: #C9A84C;
+          transform: scale(1.05);
+        }
+
+        @media(max-width:768px){
+          .hero-btns{flex-direction:column;align-items:center}
+          .feat-grid{grid-template-columns:1fr!important}
+          .ben-grid{grid-template-columns:1fr!important}
+          .test-grid{grid-template-columns:1fr!important}
+          .desktop-nav { display: none !important; }
+          .burger-btn { display: flex; }
+        }
       `}</style>
 
       {/* NAV */}
-      <nav className="land-nav" style={{ position:'sticky', top:0, zIndex:50, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E2A3A', padding:'14px 40px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, fontWeight:700, color:'#C9A84C', letterSpacing:1, textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
-        <div style={{ display:'flex', gap:28, alignItems:'center' }}>
+      <nav className="land-nav" style={{ position:'sticky', top:0, zIndex:99, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E2A3A', padding:'14px 40px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, fontWeight:700, color:'#C9A84C', letterSpacing:1, textDecoration:'none', zIndex: 100, position: 'relative' }} className="logo-link" onClick={() => setMenuOpen(false)}>✦ Aurum</Link>
+        <div className="desktop-nav" style={{ display:'flex', gap:28, alignItems:'center' }}>
           <a href="#features">Features</a>
           <a href="#benefits">Why Aurum</a>
           <a href="#faq">FAQ</a>
@@ -60,7 +149,29 @@ export default function Landing() {
           <Link to="/login"    style={{ color:'#E8DCC8' }}>Login</Link>
           <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'8px 20px', borderRadius:9, fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700, textDecoration:'none' }}>Get Started →</Link>
         </div>
+
+        {/* Mobile Burger Button */}
+        <button 
+          className={`burger-btn ${menuOpen ? 'open' : ''}`} 
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+          aria-expanded={menuOpen}
+        >
+          <span className="burger-line line-1"></span>
+          <span className="burger-line line-2"></span>
+          <span className="burger-line line-3"></span>
+        </button>
       </nav>
+
+      {/* Mobile Nav Overlay */}
+      <div className={`mobile-nav-overlay ${menuOpen ? 'open' : ''}`}>
+        <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+        <a href="#benefits" onClick={() => setMenuOpen(false)}>Why Aurum</a>
+        <a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a>
+        <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
+        <Link to="/login" style={{ color:'#E8DCC8' }} onClick={() => setMenuOpen(false)}>Login</Link>
+        <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'12px 32px', borderRadius:9, fontFamily:"'DM Mono',monospace", fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center', width:'80%', maxWidth: 280 }} onClick={() => setMenuOpen(false)}>Get Started →</Link>
+      </div>
 
       {/* HERO */}
       <section style={{ minHeight:'90vh', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'60px 24px', position:'relative', overflow:'hidden' }}>

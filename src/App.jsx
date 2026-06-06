@@ -24,6 +24,7 @@ import Reports      from './pages/Reports.jsx';
 import Feedback     from './pages/Feedback.jsx';
 import Settings     from './pages/Settings.jsx';
 import Onboarding   from './pages/Onboarding.jsx';
+import Admin        from './pages/Admin.jsx';
 
 // ── Nav items ─────────────────────────────────────────
 const NAV = [
@@ -93,6 +94,17 @@ function Layout({ children }) {
 
   return (
     <div className="app-layout">
+      {/* Mobile Top Header */}
+      <header className="mobile-header" style={{ position:'sticky', top:0, zIndex:45, background:'#080C14ee', backdropFilter:'blur(16px)', borderBottom:'1px solid var(--border)', padding:'12px 20px', display:'none', justifyContent:'space-between', alignItems:'center', width:'100%' }}>
+        <div style={{ fontFamily:'var(--font-serif)', fontSize:18, fontWeight:700, color:'var(--gold)' }}>✦ Aurum</div>
+        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{user?.name}</span>
+          {user?.unlimitedAI && (
+            <span style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', fontSize:8, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase' }}>PRO</span>
+          )}
+        </div>
+      </header>
+
       <aside className="sidebar">
         {/* Logo - hidden on mobile */}
         <Link 
@@ -112,10 +124,20 @@ function Layout({ children }) {
           </NavLink>
         ))}
 
+        {user?.isAdmin && (
+          <NavLink to="/admin" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+            <span style={{ fontSize:15, flexShrink:0 }}>🛡</span>
+            <span className="nav-label">Admin Panel</span>
+          </NavLink>
+        )}
+
         {/* Logout - hidden on mobile (in settings instead) */}
         <div style={{ marginTop:'auto', paddingTop:16, borderTop:'1px solid var(--border)' }}>
-          <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginBottom:8, paddingLeft:4, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }} className="nav-label">
-            {user?.name}
+          <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginBottom:8, paddingLeft:4, display:'flex', alignItems:'center', gap:6 }} className="nav-label">
+            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name}</span>
+            {user?.unlimitedAI && (
+              <span style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', fontSize:8, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase', flexShrink:0 }}>PRO</span>
+            )}
           </div>
           <button onClick={handleLogout} className="ghost-btn" style={{ width:'100%', padding:'8px' }}>
             <span style={{ marginRight:6 }}>⇥</span>
@@ -161,6 +183,7 @@ function PublicLayout({ children }) {
 }
 
 export default function App() {
+  const { user } = useAuth();
   return (
     <Routes>
       {/* Public landing */}
@@ -185,6 +208,7 @@ export default function App() {
       <Route path="/reports"      element={<PrivateRoute><Layout><Reports      /></Layout></PrivateRoute>} />
       <Route path="/feedback"     element={<PrivateRoute><Layout><Feedback     /></Layout></PrivateRoute>} />
       <Route path="/settings"     element={<PrivateRoute><Layout><Settings     /></Layout></PrivateRoute>} />
+      <Route path="/admin"        element={<PrivateRoute><Layout>{user && user.isAdmin ? <Admin /> : <Navigate to="/dashboard" replace />}</Layout></PrivateRoute>} />
 
       {/* Public info pages */}
       <Route path="/about"          element={<PublicLayout><About          /></PublicLayout>} />
