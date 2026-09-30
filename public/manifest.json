@@ -1,11 +1,11 @@
 {
   "name": "Aurum - Smart Expense Tracker",
   "short_name": "Aurum",
-  "description": "AI-powered personal finance tracker",
+  "description": "Personal expense tracker with budgets and reports",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#0F172A",
+  "background_color": "#FAFAF9",
+  "theme_color": "#FAFAF9",
   "orientation": "portrait-primary",
   "icons": [
     { "src": "/icons/icon-72.png",   "sizes": "72x72",   "type": "image/png" },

@@ -1,10 +1,20 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { Sparkles, Bug, Lightbulb, MessageCircle, Inbox } from 'lucide-react';
 import api from '../utils/api.js';
+import { formatDate } from '../utils/constants.js';
+import { PageHeader, Badge, EmptyState } from '../components/ui/index.jsx';
 
-const TYPES     = [{v:'feature',l:'🚀 Feature Request'},{v:'bug',l:'🐛 Bug Report'},{v:'suggestion',l:'💡 Suggestion'},{v:'general',l:'💬 General Feedback'}];
-const PRIORITIES= [{v:'low',l:'Low'},{v:'medium',l:'Medium'},{v:'high',l:'High'}];
+const TYPES = [
+  { v:'feature',    l:'Feature request', icon:Sparkles },
+  { v:'bug',        l:'Bug report',      icon:Bug },
+  { v:'suggestion', l:'Suggestion',      icon:Lightbulb },
+  { v:'general',    l:'General',         icon:MessageCircle },
+];
+const TYPE_MAP   = Object.fromEntries(TYPES.map(t => [t.v, t]));
+const PRIORITIES = [{v:'low',l:'Low'},{v:'medium',l:'Medium'},{v:'high',l:'High'}];
+const STATUS_TONE = { open:'info', 'in-review':'warning', resolved:'positive' };
 
 export default function Feedback() {
   const [form, setForm]       = useState({ type:'general', title:'', description:'', priority:'medium' });
@@ -27,7 +37,7 @@ export default function Feedback() {
     setLoading(true);
     try {
       const { data } = await api.post('/feedback', form);
-      toast.success('Feedback submitted ✓');
+      toast.success('Thanks, feedback sent');
       queryClient.setQueryData(['feedback'], (items = []) => [data, ...items]);
       setForm({ type:'general', title:'', description:'', priority:'medium' });
       setTab('history');
@@ -35,87 +45,89 @@ export default function Feedback() {
     setLoading(false);
   };
 
-  const statusColor = { open:'#60A5FA', 'in-review':'#FBBF24', resolved:'#34D399' };
-  const typeIcon    = { feature:'🚀', bug:'🐛', suggestion:'💡', general:'💬' };
-
   return (
-    <div className="fade-in" style={{ maxWidth:720, margin:'0 auto' }}>
-      <div style={{ marginBottom:24 }}>
-        <h1 style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:600 }}>Feedback</h1>
-        <p style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:2 }}>Help us improve Aurum</p>
-      </div>
+    <div className="fade-in" style={{ maxWidth:720 }}>
+      <PageHeader title="Feedback" description="Report a problem or suggest an improvement"/>
 
-      {/* Tabs */}
-      <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--surface)', border:'1px solid var(--border)', borderRadius:12, padding:4, width:'fit-content' }}>
-        {[{id:'submit',l:'Submit Feedback'},{id:'history',l:`My Submissions (${past.length})`}].map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ background:tab===t.id?'var(--gold-dim)':'transparent', border:`1px solid ${tab===t.id?'#C9A84C44':'transparent'}`, color:tab===t.id?'var(--gold)':'var(--text-dim)', borderRadius:9, padding:'7px 18px', cursor:'pointer', fontFamily:'var(--font-mono)', fontSize:12, transition:'all .2s' }}>
-            {t.l}
-          </button>
+      <div className="segmented" role="tablist" style={{ marginBottom:20 }}>
+        {[{id:'submit',l:'New feedback'},{id:'history',l:`Your submissions (${past.length})`}].map(t => (
+          <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={tab === t.id ? 'active' : ''}>{t.l}</button>
         ))}
       </div>
 
       {tab === 'submit' && (
-        <div className="card" style={{ padding:28 }}>
-          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            <div>
-              <div className="floating-label">Feedback Type</div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:8 }}>
-                {TYPES.map(t => (
-                  <div key={t.v} onClick={() => set('type',t.v)} style={{ padding:'10px 14px', borderRadius:10, border:`1px solid ${form.type===t.v?'var(--gold)':'var(--border)'}`, cursor:'pointer', background:form.type===t.v?'var(--gold-dim)':'transparent', fontSize:13, color:form.type===t.v?'var(--gold)':'var(--text-muted)', transition:'all .15s' }}>
-                    {t.l}
-                  </div>
-                ))}
+        <div className="card" style={{ padding:24 }}>
+          <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:18 }}>
+            <div className="field">
+              <span className="label">Type</span>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:8 }} role="radiogroup" aria-label="Type">
+                {TYPES.map(t => {
+                  const selected = form.type === t.v;
+                  return (
+                    <button type="button" key={t.v} role="radio" aria-checked={selected} onClick={() => set('type',t.v)} className={`option${selected ? ' selected' : ''}`}>
+                      <t.icon size={15} strokeWidth={1.75} style={{ color: selected ? 'var(--accent)' : 'var(--text-3)' }}/>
+                      {t.l}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            <div>
-              <div className="floating-label">Title</div>
-              <input className="input" placeholder="Brief summary of your feedback" value={form.title} onChange={e => set('title',e.target.value)} required/>
+            <div className="field">
+              <label className="label" htmlFor="fb-title">Title</label>
+              <input id="fb-title" className="input" placeholder="A short summary" value={form.title} onChange={e => set('title',e.target.value)} required/>
             </div>
-            <div>
-              <div className="floating-label">Description</div>
-              <textarea className="input" rows={5} placeholder="Describe in detail…" value={form.description} onChange={e => set('description',e.target.value)} required style={{ resize:'vertical' }}/>
+            <div className="field">
+              <label className="label" htmlFor="fb-desc">Details</label>
+              <textarea id="fb-desc" className="input" rows={5} placeholder="What happened, or what would you like to see?" value={form.description} onChange={e => set('description',e.target.value)} required/>
             </div>
-            <div>
-              <div className="floating-label">Priority</div>
-              <div style={{ display:'flex', gap:8 }}>
+            <div className="field">
+              <span className="label">Priority</span>
+              <div className="segmented" role="radiogroup" aria-label="Priority" style={{ alignSelf:'flex-start' }}>
                 {PRIORITIES.map(p => (
-                  <div key={p.v} onClick={() => set('priority',p.v)} style={{ flex:1, padding:'9px', borderRadius:10, border:`1px solid ${form.priority===p.v?'var(--gold)':'var(--border)'}`, cursor:'pointer', textAlign:'center', background:form.priority===p.v?'var(--gold-dim)':'transparent', fontSize:12, fontFamily:'var(--font-mono)', color:form.priority===p.v?'var(--gold)':'var(--text-dim)', transition:'all .15s' }}>
-                    {p.l}
-                  </div>
+                  <button type="button" key={p.v} role="radio" aria-checked={form.priority === p.v} onClick={() => set('priority',p.v)} className={form.priority === p.v ? 'active' : ''}>{p.l}</button>
                 ))}
               </div>
             </div>
-            <button className="gold-btn shine" type="submit" disabled={loading}>
-              {loading ? <span className="spinner"/> : 'Submit Feedback →'}
-            </button>
+            <div>
+              <button className="btn btn-primary" type="submit" disabled={loading}>
+                {loading ? <span className="spinner"/> : 'Send feedback'}
+              </button>
+            </div>
           </form>
         </div>
       )}
 
       {tab === 'history' && (
-        <div>
-          {past.length === 0 ? (
-            <div className="card" style={{ textAlign:'center', padding:48 }}>
-              <div style={{ fontSize:44, marginBottom:12 }}>💬</div>
-              <p style={{ fontSize:13, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>No submissions yet. Share your feedback above!</p>
-            </div>
-          ) : past.map(fb => (
-            <div key={fb._id} className="card" style={{ marginBottom:12 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <span style={{ fontSize:18 }}>{typeIcon[fb.type]}</span>
-                  <span style={{ fontSize:14, color:'var(--text)', fontWeight:500 }}>{fb.title}</span>
+        past.length === 0 ? (
+          <div className="card">
+            <EmptyState icon={Inbox} title="No submissions yet" description="Anything you send will show up here with its status."/>
+          </div>
+        ) : (
+          <div className="card card-flush list">
+            {past.map(fb => {
+              const t = TYPE_MAP[fb.type] || TYPE_MAP.general;
+              return (
+                <div key={fb._id} className="list-row" style={{ alignItems:'flex-start', padding:'16px 20px' }}>
+                  <span className="cat-icon sm" style={{ marginTop:1 }}><t.icon size={14} strokeWidth={1.75}/></span>
+                  <div className="row-main">
+                    <div style={{ display:'flex', justifyContent:'space-between', gap:12, alignItems:'flex-start' }}>
+                      <div className="row-title" style={{ whiteSpace:'normal' }}>{fb.title}</div>
+                      <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                        <Badge tone={STATUS_TONE[fb.status]} dot>{fb.status ? fb.status[0].toUpperCase() + fb.status.slice(1).replace('-', ' ') : 'Open'}</Badge>
+                      </div>
+                    </div>
+                    <p style={{ fontSize:13.5, color:'var(--text-2)', lineHeight:1.6, marginTop:4 }}>{fb.description}</p>
+                    <div className="row-meta" style={{ marginTop:8 }}>
+                      <span>{t.l}</span><span className="meta-sep"/>
+                      <span>{fb.priority ? fb.priority[0].toUpperCase() + fb.priority.slice(1) : 'Medium'} priority</span><span className="meta-sep"/>
+                      <span>{formatDate(fb.createdAt)}</span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display:'flex', gap:8 }}>
-                  <span style={{ fontSize:10, fontFamily:'var(--font-mono)', padding:'3px 9px', borderRadius:8, background:`${statusColor[fb.status]}22`, color:statusColor[fb.status], border:`1px solid ${statusColor[fb.status]}44` }}>{fb.status}</span>
-                  <span style={{ fontSize:10, fontFamily:'var(--font-mono)', padding:'3px 9px', borderRadius:8, background:'#1E2A3A', color:'var(--text-dim)' }}>{fb.priority}</span>
-                </div>
-              </div>
-              <p style={{ fontSize:13, color:'var(--text-muted)', lineHeight:1.6 }}>{fb.description}</p>
-              <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:8 }}>{new Date(fb.createdAt).toLocaleDateString()}</div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )
       )}
     </div>
   );

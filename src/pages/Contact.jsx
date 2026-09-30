@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Check, AlertCircle } from 'lucide-react';
 import api from '../utils/api.js';
 
 export default function Contact() {
@@ -19,60 +20,55 @@ export default function Contact() {
   };
 
   return (
-    <div className="fade-in">
-      <div style={{ maxWidth:640, margin:'0 auto' }}>
-        <div style={{ marginBottom:32 }}>
-          <h1 style={{ fontFamily:'var(--font-serif)', fontSize:32, fontWeight:600 }}>Contact Us</h1>
-          <p style={{ fontSize:13, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:6, lineHeight:1.7 }}>Have a question or need help? We'd love to hear from you.</p>
-        </div>
+    <article className="prose-page fade-in">
+      <div className="prose-eyebrow">Contact</div>
+      <h1>Get in touch.</h1>
+      <p className="lede">Questions, problems or ideas are all welcome. We usually reply within one to two working days.</p>
 
+      <dl className="spec-list" style={{ marginTop:28 }}>
+        <div><dt>Email</dt><dd><a href="mailto:support@aurum.app" style={{ color:'inherit' }}>support@aurum.app</a></dd></div>
+        <div><dt>Hours</dt><dd>Mon–Fri, 9am–6pm</dd></div>
+        <div><dt>Response time</dt><dd>Within 24–48 hours</dd></div>
+      </dl>
+
+      <div style={{ marginTop:32 }}>
         {sent ? (
-          <div className="card fade-in" style={{ textAlign:'center', padding:48 }}>
-            <div style={{ fontSize:52, marginBottom:16 }}>✉️</div>
-            <h2 style={{ fontFamily:'var(--font-serif)', fontSize:24, color:'#34D399', marginBottom:10 }}>Message Sent!</h2>
-            <p style={{ fontSize:13, fontFamily:'var(--font-mono)', color:'var(--text-dim)', lineHeight:1.8 }}>
-              Thanks for reaching out. We typically respond within 24–48 hours.
-            </p>
+          <div className="callout callout-positive">
+            <Check size={16}/>
+            <div>
+              <div className="callout-title">Message sent</div>
+              <div className="callout-body">Thanks for reaching out. We'll reply to {form.email}.</div>
+            </div>
           </div>
         ) : (
-          <div className="card" style={{ padding:32 }}>
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:16 }}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                <div>
-                  <div className="floating-label">Your Name</div>
-                  <input className="input" placeholder="John Doe" value={form.name} onChange={e => set('name', e.target.value)} required/>
-                </div>
-                <div>
-                  <div className="floating-label">Email Address</div>
-                  <input className="input" type="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} required/>
-                </div>
+          <form onSubmit={handleSubmit} className="card" style={{ padding:24, display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))', gap:14 }}>
+              <div className="field">
+                <label className="label" htmlFor="c-name">Name</label>
+                <input id="c-name" className="input" autoComplete="name" value={form.name} onChange={e => set('name', e.target.value)} required/>
               </div>
-              <div>
-                <div className="floating-label">Subject</div>
-                <input className="input" placeholder="What's this about?" value={form.subject} onChange={e => set('subject', e.target.value)} required/>
+              <div className="field">
+                <label className="label" htmlFor="c-email">Email</label>
+                <input id="c-email" className="input" type="email" autoComplete="email" placeholder="you@example.com" value={form.email} onChange={e => set('email', e.target.value)} required/>
               </div>
-              <div>
-                <div className="floating-label">Message</div>
-                <textarea className="input" rows={6} placeholder="Write your message here…" value={form.message} onChange={e => set('message', e.target.value)} required style={{ resize:'vertical', minHeight:130 }}/>
-              </div>
-              {error && <div style={{ fontSize:12, color:'#FF6B6B', background:'#FF6B6B11', padding:10, borderRadius:8, fontFamily:'var(--font-mono)' }}>{error}</div>}
-              <button className="gold-btn shine" type="submit" disabled={loading}>
-                {loading ? <span className="spinner"/> : 'Send Message →'}
-              </button>
-            </form>
-          </div>
-        )}
-
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginTop:20 }}>
-          {[{icon:'📧',l:'Email',v:'support@aurum.app'},{icon:'🌍',l:'Availability',v:'Mon–Fri, 9am–6pm'},{icon:'⚡',l:'Response Time',v:'Within 24–48 hours'}].map(c=>(
-            <div key={c.l} className="card" style={{ textAlign:'center', padding:16 }}>
-              <div style={{ fontSize:24, marginBottom:8 }}>{c.icon}</div>
-              <div className="floating-label">{c.l}</div>
-              <div style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--gold)' }}>{c.v}</div>
             </div>
-          ))}
-        </div>
+            <div className="field">
+              <label className="label" htmlFor="c-subject">Subject</label>
+              <input id="c-subject" className="input" value={form.subject} onChange={e => set('subject', e.target.value)} required/>
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="c-message">Message</label>
+              <textarea id="c-message" className="input" rows={6} value={form.message} onChange={e => set('message', e.target.value)} required style={{ minHeight:140 }}/>
+            </div>
+            {error && <div className="callout callout-negative"><AlertCircle size={16}/><div>{error}</div></div>}
+            <div>
+              <button className="btn btn-primary" type="submit" disabled={loading}>
+                {loading ? <span className="spinner"/> : 'Send message'}
+              </button>
+            </div>
+          </form>
+        )}
       </div>
-    </div>
+    </article>
   );
 }

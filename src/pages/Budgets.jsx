@@ -1,14 +1,25 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { CATS, CAT_MAP } from '../utils/constants.js';
+import { useChartColors } from '../context/ThemeContext.jsx';
+import { CATS, CAT_MAP, formatMoney } from '../utils/constants.js';
+import { PageHeader, StatStrip, CategoryIcon, Badge, ChartTooltip } from '../components/ui/index.jsx';
+
+const STATUS = {
+  unset:   { tone: undefined,  text: 'No budget' },
+  ok:      { tone: 'positive', text: 'On track' },
+  warning: { tone: 'warning',  text: 'Near limit' },
+  over:    { tone: 'negative', text: 'Over budget' },
+};
 
 export default function Budgets() {
   const { user }   = useAuth();
+  const colors     = useChartColors();
   const currency   = user?.currency || '$';
+  const money      = (v, opts) => formatMoney(v, currency, opts);
   const now        = new Date();
   const month      = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
 
@@ -35,7 +46,7 @@ export default function Budgets() {
     if (isNaN(n) || n <= 0) { toast.error('Enter a valid amount'); return; }
     try {
       await api.post('/budgets', { category: catId, amount: n, month });
-      toast.success('Budget saved ✓');
+      toast.success('Budget saved');
       setEditing(null); setVal('');
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
@@ -54,113 +65,109 @@ export default function Budgets() {
   const getSpent = (catId) => stats?.byCategory?.find(c => c._id === catId)?.total || 0;
   const totalBudget = budgets.reduce((s, b) => s + b.amount, 0);
   const totalSpent  = stats?.totalExpenses || 0;
+  const remaining   = totalBudget - totalSpent;
 
-  // Chart data
-  const chartData = budgets.map(b => ({
-    name: CAT_MAP[b.category]?.icon + ' ' + (CAT_MAP[b.category]?.label?.split(' ')[0] || b.category),
-    budget: b.amount,
-    spent:  getSpent(b.category),
-    color:  CAT_MAP[b.category]?.color || '#C9A84C',
-  }));
+  const chartData = budgets.map(b => {
+    const spent = getSpent(b.category);
+    return {
+      name:   CAT_MAP[b.category]?.short || b.category,
+      budget: b.amount,
+      spent,
+      color:  spent > b.amount ? colors.negative : colors.accent,
+    };
+  });
 
-  if (loading) return <div style={{ display:'flex', justifyContent:'center', padding:60 }}><div className="spinner" style={{width:30,height:30}}/></div>;
+  if (loading) return <div style={{ display:'flex', justifyContent:'center', padding:80 }}><div className="spinner" style={{ width:24, height:24 }}/></div>;
 
   return (
     <div className="fade-in">
-      <div style={{ marginBottom:24 }}>
-        <h1 style={{ fontFamily:'var(--font-serif)', fontSize:28, fontWeight:600 }}>Budgets</h1>
-        <p style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:2 }}>
-          Monthly limits for {now.toLocaleString('default',{month:'long'})} {now.getFullYear()}
-        </p>
-      </div>
+      <PageHeader
+        title="Budgets"
+        description={`Monthly limits for ${now.toLocaleString('en', { month:'long' })} ${now.getFullYear()}`}
+      />
 
-      {/* Overview */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))', gap:14, marginBottom:24 }}>
-        {[
-          { l:'Total Budget',   v:totalBudget,              c:'var(--gold)' },
-          { l:'Total Spent',    v:totalSpent,               c:'#FF6B6B' },
-          { l:'Remaining',      v:totalBudget - totalSpent, c: totalBudget-totalSpent>=0?'#10B981':'#FF6B6B' },
-          { l:'Categories Set', v:budgets.length,           c:'#60A5FA', noCurr:true },
-        ].map(s => (
-          <div key={s.l} className="stat-card">
-            <div className="floating-label">{s.l}</div>
-            <div style={{ fontFamily:'var(--font-serif)', fontSize:24, color:s.c, fontWeight:700 }}>
-              {s.noCurr ? s.v : `${currency}${Math.abs(s.v).toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}`}
+      <StatStrip items={[
+        { label:'Total budget',   value: money(totalBudget) },
+        { label:'Spent',          value: money(totalSpent) },
+        { label:'Remaining',      value: `${remaining < 0 ? '−' : ''}${money(Math.abs(remaining))}`, tone: remaining < 0 ? 'negative' : undefined },
+        { label:'Categories set', value: `${budgets.length} of ${CATS.length - 1}` },
+      ]}/>
+
+      {chartData.length > 0 && (
+        <div className="card" style={{ marginBottom:16 }}>
+          <div className="card-header">
+            <div className="card-title">Budget vs. spent</div>
+            <div style={{ display:'flex', gap:14, fontSize:12.5, color:'var(--text-2)' }}>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><span className="swatch" style={{ background:colors.muted }}/>Budget</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><span className="swatch" style={{ background:colors.accent }}/>Spent</span>
+              <span style={{ display:'inline-flex', alignItems:'center', gap:6 }}><span className="swatch" style={{ background:colors.negative }}/>Over</span>
             </div>
           </div>
-        ))}
-      </div>
-
-      {/* Bar chart */}
-      {chartData.length > 0 && (
-        <div className="card" style={{ marginBottom:20 }}>
-          <div className="floating-label" style={{marginBottom:14}}>Budget vs Actual Spending</div>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={chartData} barGap={4} barCategoryGap="30%">
-              <XAxis dataKey="name" tick={{ fill:'#4A5A6E', fontSize:11, fontFamily:"'DM Mono',monospace" }} axisLine={false} tickLine={false}/>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={chartData} barGap={2} barCategoryGap="28%" margin={{ top:4, right:0, left:0, bottom:0 }}>
+              <CartesianGrid vertical={false} stroke={colors.grid}/>
+              <XAxis dataKey="name" tick={{ fill:colors.text3, fontSize:12 }} axisLine={{ stroke:colors.border }} tickLine={false} dy={6} interval={0}/>
               <YAxis hide/>
-              <Tooltip contentStyle={{ background:'#0D1321', border:'1px solid #2A3A50', borderRadius:10, fontSize:12, fontFamily:"'DM Mono',monospace", color:'#E8DCC8' }} formatter={v => [`${currency}${v.toFixed(2)}`]}/>
-              <Bar dataKey="budget" name="Budget" radius={[4,4,0,0]} fill="#C9A84C33"/>
-              <Bar dataKey="spent"  name="Spent"  radius={[4,4,0,0]}>
-                {chartData.map((d,i) => <Cell key={i} fill={d.spent > d.budget ? '#FF6B6B' : d.color}/>)}
+              <Tooltip cursor={{ fill:colors.grid }} content={<ChartTooltip format={v => money(v)}/>}/>
+              <Bar dataKey="budget" name="Budget" radius={[4,4,0,0]} fill={colors.muted} maxBarSize={28}/>
+              <Bar dataKey="spent"  name="Spent"  radius={[4,4,0,0]} maxBarSize={28}>
+                {chartData.map(d => <Cell key={d.name} fill={d.color}/>)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* Category budget cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:14 }}>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
         {CATS.filter(c => c.id !== 'income').map(cat => {
           const bud    = budgets.find(b => b.category === cat.id);
           const spent  = getSpent(cat.id);
           const pct    = bud ? Math.min((spent / bud.amount) * 100, 100) : 0;
-          const status = !bud ? 'unset' : pct >= 100 ? 'over' : pct >= 80 ? 'warning' : 'ok';
-          const statusColor = { unset:'var(--text-dim)', over:'#FF6B6B', warning:'#FBBF24', ok:'#34D399' }[status];
-          const statusText  = { unset:'No budget set', over:'Over budget!', warning:'Near limit', ok:'On track' }[status];
+          const status = !bud ? 'unset' : spent >= bud.amount ? 'over' : pct >= 80 ? 'warning' : 'ok';
+          const s      = STATUS[status];
+          const fill   = { over:'var(--negative)', warning:'var(--warning)', ok:'var(--text-2)', unset:'var(--text-2)' }[status];
 
           return (
-            <div key={cat.id} className="card">
-              {/* Header */}
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                  <div style={{ width:38, height:38, borderRadius:11, background:`${cat.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17 }}>{cat.icon}</div>
-                  <div>
-                    <div style={{ fontSize:13, color:'var(--text)', fontWeight:500 }}>{cat.label}</div>
-                    <div style={{ fontSize:10, fontFamily:'var(--font-mono)', color:statusColor, marginTop:2 }}>{statusText}</div>
+            <div key={cat.id} className="card" style={{ padding:16 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:14 }}>
+                <CategoryIcon cat={cat.id}/>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:14, fontWeight:500 }}>{cat.label}</div>
+                  <div style={{ marginTop:3 }}>
+                    <Badge tone={s.tone} dot={!!s.tone}>{s.text}</Badge>
                   </div>
                 </div>
-                <div style={{ display:'flex', gap:6 }}>
-                  <button onClick={() => { setEditing(cat.id); setVal(bud?.amount || ''); }} style={{ background:'#1E2A3A', border:'none', color:'var(--gold)', cursor:'pointer', borderRadius:8, padding:'4px 12px', fontSize:11, fontFamily:'var(--font-mono)' }}>
-                    {bud ? 'Edit' : 'Set'}
-                  </button>
-                  {bud && <button onClick={() => removeBudget(cat.id)} style={{ background:'#FF6B6B22', border:'none', color:'#FF6B6B', cursor:'pointer', borderRadius:8, padding:'4px 9px', fontSize:11 }}>✕</button>}
-                </div>
+                {editing !== cat.id && (
+                  <div style={{ display:'flex', gap:4 }}>
+                    <button className="btn btn-secondary btn-sm" onClick={() => { setEditing(cat.id); setVal(bud?.amount || ''); }}>
+                      {bud ? 'Edit' : 'Set budget'}
+                    </button>
+                    {bud && <button className="btn btn-ghost btn-sm" onClick={() => removeBudget(cat.id)}>Remove</button>}
+                  </div>
+                )}
               </div>
 
-              {bud ? (
+              {editing === cat.id ? (
+                <div style={{ display:'flex', gap:6 }}>
+                  <input className="input num" style={{ flex:1, height:32 }} type="number" min="1" step="1" placeholder={`Monthly limit (${currency})`}
+                    value={val} onChange={e => setVal(e.target.value)} autoFocus
+                    onKeyDown={e => { if (e.key === 'Enter') saveBudget(cat.id); if (e.key === 'Escape') setEditing(null); }}/>
+                  <button className="btn btn-primary btn-sm" onClick={() => saveBudget(cat.id)}>Save</button>
+                  <button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)}>Cancel</button>
+                </div>
+              ) : bud ? (
                 <>
-                  <div className="progress-bar" style={{ marginBottom:8 }}>
-                    <div className="progress-fill" style={{ width:`${pct}%`, background:statusColor }}/>
+                  <div className="progress" style={{ marginBottom:8 }}>
+                    <div className="progress-fill" style={{ width:`${pct}%`, background:fill }}/>
                   </div>
-                  <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <span style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{currency}{spent.toFixed(2)} spent</span>
-                    <span style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>/ {currency}{bud.amount}</span>
+                  <div className="num" style={{ display:'flex', justifyContent:'space-between', fontSize:13 }}>
+                    <span>{money(spent)} <span className="text-3">spent</span></span>
+                    <span className="text-3">of {money(bud.amount, { decimals:0 })}</span>
                   </div>
                 </>
               ) : (
-                <div style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)', textAlign:'center', padding:'6px 0' }}>
-                  {currency}{spent.toFixed(2)} untracked
-                </div>
-              )}
-
-              {editing === cat.id && (
-                <div style={{ marginTop:12, display:'flex', gap:8 }}>
-                  <input className="input" style={{ flex:1 }} type="number" min="1" step="1" placeholder="Budget amount"
-                    value={val} onChange={e => setVal(e.target.value)} autoFocus
-                    onKeyDown={e => e.key === 'Enter' && saveBudget(cat.id)}/>
-                  <button className="gold-btn" style={{ padding:'8px 14px' }} onClick={() => saveBudget(cat.id)}>Save</button>
-                  <button className="ghost-btn" style={{ padding:'8px 12px' }} onClick={() => setEditing(null)}>✕</button>
+                <div className="num text-3" style={{ fontSize:13 }}>
+                  {spent > 0 ? `${money(spent)} spent, no limit set` : 'Nothing spent this month'}
                 </div>
               )}
             </div>

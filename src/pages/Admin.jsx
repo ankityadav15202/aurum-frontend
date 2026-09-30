@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import { Users, AlertCircle } from 'lucide-react';
 import api from '../utils/api.js';
+import { PageHeader, Badge, EmptyState } from '../components/ui/index.jsx';
+
+const FREE_LIMIT = 2;
 
 export default function Admin() {
   const [loadingId, setLoadingId] = useState(null);
@@ -19,8 +23,8 @@ export default function Admin() {
     setLoadingId(userId);
     try {
       const { data } = await api.patch(`/admin/users/${userId}/toggle-unlimited`);
-      toast.success(data.message || 'Updated successfully ✓');
-      
+      toast.success(data.message || 'Access updated');
+
       // Update local query cache
       queryClient.setQueryData(['admin-users'], (oldUsers = []) => {
         return oldUsers.map(u => u._id === userId ? { ...u, unlimitedAI: data.user.unlimitedAI } : u);
@@ -32,82 +36,67 @@ export default function Admin() {
   };
 
   return (
-    <div className="fade-in" style={{ maxWidth: 840, margin: '0 auto' }}>
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 600 }}>Admin Panel</h1>
-        <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>
-          Manage user AI advisor permissions and check usage
-        </p>
-      </div>
+    <div className="fade-in">
+      <PageHeader
+        title="Users & access"
+        description="Review advisor usage and grant unlimited access"
+        actions={!isLoading && !error && <span className="text-3 num" style={{ fontSize:13 }}>{users.length} users</span>}
+      />
 
-      <div className="card" style={{ padding: 20 }}>
+      <div className="card card-flush" style={{ overflow:'hidden' }}>
         {isLoading ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <span className="spinner" style={{ width: 32, height: 32 }} />
-            <p style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 12 }}>Loading users...</p>
+          <div style={{ display:'flex', justifyContent:'center', padding:48 }}>
+            <span className="spinner" style={{ width:22, height:22 }} />
           </div>
         ) : error ? (
-          <div style={{ textAlign: 'center', padding: 48, color: 'var(--red)' }}>
-            <p style={{ fontSize: 14, fontFamily: 'var(--font-mono)' }}>Error loading users list. Access denied or backend error.</p>
-          </div>
+          <EmptyState icon={AlertCircle} title="Couldn't load users" description="Access was denied or the server returned an error."/>
         ) : users.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: 48 }}>
-            <p style={{ fontSize: 13, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>No registered users found.</p>
-          </div>
+          <EmptyState icon={Users} title="No users yet"/>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+          <div className="table-wrap">
+            <table className="table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)' }}>
-                  <th style={{ padding: '12px 8px' }}>User Details</th>
-                  <th style={{ padding: '12px 8px' }}>Joined Date</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center' }}>Prompts Used</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'center' }}>Privileges</th>
-                  <th style={{ padding: '12px 8px', textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>User</th>
+                  <th>Joined</th>
+                  <th className="right">Questions used</th>
+                  <th>Plan</th>
+                  <th className="right"><span className="visually-hidden">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u._id} style={{ borderBottom: '1px solid #1E2A3A55', fontSize: 13 }}>
-                    <td style={{ padding: '14px 8px' }}>
-                      <div style={{ fontWeight: 500, color: 'var(--text)' }}>{u.name} {u.isAdmin && <span style={{ fontSize: 10, background: 'var(--gold-dim)', color: 'var(--gold)', padding: '1px 5px', borderRadius: 4, marginLeft: 6 }}>Admin</span>}</div>
-                      <div style={{ fontSize: 11, color: 'var(--text-dim)', marginTop: 2 }}>{u.email}</div>
+                  <tr key={u._id}>
+                    <td>
+                      <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <span className="avatar" style={{ width:28, height:28, fontSize:12 }}>{u.name?.[0]?.toUpperCase()}</span>
+                        <div style={{ minWidth:0 }}>
+                          <div style={{ fontWeight:500, display:'flex', alignItems:'center', gap:6 }}>
+                            {u.name}
+                            {u.isAdmin && <Badge>Admin</Badge>}
+                          </div>
+                          <div className="text-3" style={{ fontSize:12.5 }}>{u.email}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td style={{ padding: '14px 8px', color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
-                      {new Date(u.createdAt).toLocaleDateString()}
+                    <td className="text-2 num" style={{ whiteSpace:'nowrap' }}>
+                      {new Date(u.createdAt).toLocaleDateString('en', { day:'numeric', month:'short', year:'numeric' })}
                     </td>
-                    <td style={{ padding: '14px 8px', textAlign: 'center', fontWeight: 600, fontFamily: 'var(--font-mono)', color: u.aiPromptCount >= 2 && !u.unlimitedAI ? 'var(--red)' : 'var(--text-muted)' }}>
-                      {u.aiPromptCount}
+                    <td className="right num" style={{ color: u.aiPromptCount >= FREE_LIMIT && !u.unlimitedAI ? 'var(--negative)' : 'var(--text)' }}>
+                      {u.aiPromptCount}{!u.unlimitedAI && <span className="text-3"> / {FREE_LIMIT}</span>}
                     </td>
-                    <td style={{ padding: '14px 8px', textAlign: 'center' }}>
-                      {u.unlimitedAI ? (
-                        <span style={{ fontSize: 10, background: 'rgba(16, 185, 129, 0.15)', color: 'var(--green)', padding: '2px 8px', borderRadius: 10, border: '1px solid rgba(16, 185, 129, 0.3)' }}>Unlimited</span>
-                      ) : (
-                        <span style={{ fontSize: 10, background: '#1E2A3A', color: 'var(--text-dim)', padding: '2px 8px', borderRadius: 10 }}>Free Limit (2)</span>
-                      )}
+                    <td>
+                      {u.unlimitedAI ? <Badge tone="accent">Unlimited</Badge> : <Badge>Free</Badge>}
                     </td>
-                    <td style={{ padding: '14px 8px', textAlign: 'right' }}>
-                      {u.isAdmin ? (
-                        <span style={{ fontSize: 12, color: 'var(--text-dim)', fontStyle: 'italic' }}>N/A</span>
-                      ) : (
+                    <td className="right">
+                      {!u.isAdmin && (
                         <button
                           onClick={() => handleToggleUnlimited(u._id)}
                           disabled={loadingId === u._id}
-                          className="ghost-btn"
-                          style={{
-                            padding: '6px 12px',
-                            fontSize: 11,
-                            borderColor: u.unlimitedAI ? 'rgba(255, 107, 107, 0.3)' : '#C9A84C44',
-                            color: u.unlimitedAI ? 'var(--red)' : 'var(--gold)',
-                          }}
+                          className={`btn btn-sm ${u.unlimitedAI ? 'btn-ghost' : 'btn-secondary'}`}
+                          style={{ minWidth:128 }}
                         >
-                          {loadingId === u._id ? (
-                            <span className="spinner" style={{ width: 12, height: 12 }} />
-                          ) : u.unlimitedAI ? (
-                            'Revoke Unlimited'
-                          ) : (
-                            'Allow Unlimited'
-                          )}
+                          {loadingId === u._id ? <span className="spinner" /> : u.unlimitedAI ? 'Revoke unlimited' : 'Grant unlimited'}
                         </button>
                       )}
                     </td>

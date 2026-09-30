@@ -1,8 +1,30 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { Check } from 'lucide-react';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { CURRENCIES } from '../utils/constants.js';
+import { PageHeader, Badge, ThemeToggle, PasswordInput, ConfirmDialog } from '../components/ui/index.jsx';
+
+const TABS = [
+  { id: 'profile',    label: 'Profile' },
+  { id: 'security',   label: 'Security' },
+  { id: 'currency',   label: 'Currency' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'danger',     label: 'Account' },
+];
+
+function Section({ title, description, children, tone }) {
+  return (
+    <div className="card settings-card" style={{ maxWidth:640, padding:0, borderColor: tone === 'danger' ? 'color-mix(in srgb, var(--negative) 35%, var(--border))' : undefined }}>
+      <div style={{ padding:'18px 20px', borderBottom:'1px solid var(--border)' }}>
+        <div className="card-title" style={tone === 'danger' ? { color:'var(--negative)' } : undefined}>{title}</div>
+        {description && <div className="card-sub" style={{ fontSize:13 }}>{description}</div>}
+      </div>
+      <div style={{ padding:20 }}>{children}</div>
+    </div>
+  );
+}
 
 export default function Settings() {
   const { user, updateUser, logout } = useAuth();
@@ -26,7 +48,7 @@ export default function Settings() {
     try {
       const { data } = await api.patch('/auth/profile', { name });
       updateUser(data.user);
-      toast.success('Profile updated ✓');
+      toast.success('Profile updated');
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
     setSaving(false);
   };
@@ -45,7 +67,7 @@ export default function Settings() {
     setPwSaving(true);
     try {
       await api.patch('/auth/password', { currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
-      toast.success('Password updated ✓');
+      toast.success('Password updated');
       setPwForm({ currentPassword:'', newPassword:'', confirm:'' });
     } catch (err) { toast.error(err.response?.data?.message || 'Failed'); }
     setPwSaving(false);
@@ -54,190 +76,134 @@ export default function Settings() {
   const clearAllData = async () => {
     try {
       await api.delete('/expenses');
-      toast.success('All data cleared');
+      toast.success('All transactions deleted');
       setConfirmClear(false);
     } catch { toast.error('Failed to clear data'); }
   };
 
-  const TABS = ['profile', 'security', 'currency', 'danger'];
-
   return (
     <div className="fade-in">
-      <div style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: 28, fontWeight: 600 }}>Settings</h1>
-        <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>Manage your account and preferences</p>
-      </div>
+      {confirmClear && (
+        <ConfirmDialog
+          title="Delete all transactions?"
+          description="Every expense and income record will be permanently removed. Budgets stay in place. This can't be undone."
+          confirmLabel="Delete everything"
+          onConfirm={clearAllData}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
 
-      {/* Tab nav */}
-      <div className="settings-tabs">
+      <PageHeader title="Settings" description="Manage your account and preferences"/>
+
+      <div className="segmented" role="tablist" style={{ marginBottom:20 }}>
         {TABS.map(t => (
-          <button key={t} onClick={() => setTab(t)} className={tab===t ? 'active' : ''}>
-            {t}
+          <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => setTab(t.id)} className={tab === t.id ? 'active' : ''}>
+            {t.label}
           </button>
         ))}
       </div>
 
-      {/* Profile tab */}
       {tab === 'profile' && (
-        <div className="card settings-card" style={{ maxWidth: 520 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>👤 Profile</div>
-
-          {/* Avatar circle */}
-          <div className="settings-profile-summary" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24, padding: '16px', background: '#1E2A3A44', borderRadius: 12 }}>
-            <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,var(--gold),#E8C66B)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, fontWeight: 700, color: 'var(--bg)', fontFamily: 'var(--font-serif)' }}>
-              {user?.name?.[0]?.toUpperCase()}
-            </div>
-            <div className="settings-profile-copy">
-              <div style={{ fontSize: 16, color: 'var(--text)', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span>{user?.name}</span>
-                {user?.unlimitedAI && (
-                  <span style={{ background:'linear-gradient(135deg,var(--gold),#E8C66B)', color:'#080C14', fontSize:9, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase', flexShrink:0 }}>PRO</span>
-                )}
+        <Section title="Profile" description="How your name appears across Aurum.">
+          <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:20 }}>
+            <span className="avatar lg">{user?.name?.[0]?.toUpperCase()}</span>
+            <div style={{ minWidth:0 }}>
+              <div style={{ fontSize:15, fontWeight:500, display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ overflowWrap:'anywhere' }}>{user?.name}</span>
+                {user?.unlimitedAI && <Badge tone="accent">Pro</Badge>}
               </div>
-              <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>{user?.email}</div>
+              <div className="text-3" style={{ fontSize:13, overflowWrap:'anywhere' }}>{user?.email}</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            <div>
-              <div className="floating-label">Full Name</div>
-              <input className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Your name"/>
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <div className="field">
+              <label className="label" htmlFor="set-name">Full name</label>
+              <input id="set-name" className="input" value={name} onChange={e => setName(e.target.value)} placeholder="Your name"/>
+            </div>
+            <div className="field">
+              <label className="label" htmlFor="set-email">Email</label>
+              <input id="set-email" className="input" value={user?.email || ''} disabled/>
+              <div className="field-hint">Email can't be changed.</div>
             </div>
             <div>
-              <div className="floating-label">Email</div>
-              <input className="input" value={user?.email} disabled style={{ opacity: 0.5, cursor: 'not-allowed' }}/>
-              <div style={{ fontSize: 11, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 4 }}>Email cannot be changed</div>
+              <button className="btn btn-primary" onClick={saveProfile} disabled={saving}>
+                {saving ? <span className="spinner"/> : 'Save changes'}
+              </button>
             </div>
-            <button className="gold-btn shine" onClick={saveProfile} disabled={saving}>
-              {saving ? <span className="spinner"/> : 'Save Profile'}
-            </button>
           </div>
-        </div>
+        </Section>
       )}
 
-      {/* Security tab */}
       {tab === 'security' && (
-        <div className="card settings-card" style={{ maxWidth: 520 }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>🔒 Change Password</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <Section title="Change password" description="Use at least 6 characters.">
+          <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {[
-              { label: 'Current Password',  key: 'currentPassword', placeholder: 'Enter current password' },
-              { label: 'New Password',       key: 'newPassword',     placeholder: 'Min 6 characters' },
-              { label: 'Confirm Password',   key: 'confirm',         placeholder: 'Repeat new password' },
+              { label: 'Current password', key: 'currentPassword', placeholder: '' },
+              { label: 'New password',     key: 'newPassword',     placeholder: 'At least 6 characters' },
+              { label: 'Confirm password', key: 'confirm',         placeholder: 'Repeat new password' },
             ].map(f => (
-              <div key={f.key}>
-                <div className="floating-label">{f.label}</div>
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <input className="input" type={showPw[f.key] ? "text" : "password"} placeholder={f.placeholder}
-                    value={pwForm[f.key]} onChange={e => setPwForm(p => ({...p, [f.key]: e.target.value}))} style={{ paddingRight: '40px' }} />
-                  <button
-                    type="button"
-                    onClick={() => setShowPw(p => ({ ...p, [f.key]: !p[f.key] }))}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: 'var(--text-dim)',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--gold)'}
-                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-dim)'}
-                  >
-                    {showPw[f.key] ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                        <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                        <path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                        <line x1="2" y1="2" x2="22" y2="22"/>
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
-                        <circle cx="12" cy="12" r="3"/>
-                      </svg>
-                    )}
-                  </button>
-                </div>
+              <div key={f.key} className="field">
+                <label className="label">{f.label}</label>
+                <PasswordInput
+                  placeholder={f.placeholder}
+                  value={pwForm[f.key]}
+                  onChange={e => setPwForm(p => ({...p, [f.key]: e.target.value}))}
+                  show={showPw[f.key]}
+                  onToggle={() => setShowPw(p => ({ ...p, [f.key]: !p[f.key] }))}
+                  aria-label={f.label}
+                />
               </div>
             ))}
-            <button className="gold-btn shine" onClick={savePassword} disabled={pwSaving || !pwForm.currentPassword || !pwForm.newPassword}>
-              {pwSaving ? <span className="spinner"/> : 'Update Password'}
-            </button>
+            <div>
+              <button className="btn btn-primary" onClick={savePassword} disabled={pwSaving || !pwForm.currentPassword || !pwForm.newPassword}>
+                {pwSaving ? <span className="spinner"/> : 'Update password'}
+              </button>
+            </div>
           </div>
-        </div>
+        </Section>
       )}
 
-      {/* Currency tab */}
       {tab === 'currency' && (
-        <div className="card settings-card">
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 20 }}>🌍 Currency</div>
-          <div className="settings-currency-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(220px,1fr))', gap: 10 }}>
-            {CURRENCIES.map(c => (
-              <div key={c.s} onClick={() => saveCurrency(c.s)} style={{ padding: '14px 16px', borderRadius: 12, border: `1px solid ${user?.currency===c.s ? '#C9A84C88' : 'var(--border)'}`, cursor: 'pointer', background: user?.currency===c.s ? 'var(--gold-dim)' : 'transparent', transition: 'all .2s', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 20, fontFamily: 'var(--font-mono)', fontWeight: 700, color: user?.currency===c.s ? 'var(--gold)' : 'var(--text)', minWidth: 28 }}>{c.s}</span>
-                <span style={{ fontSize: 12, color: user?.currency===c.s ? 'var(--gold)' : 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{c.l.split('–')[1]?.trim()}</span>
-                {user?.currency===c.s && <span style={{ marginLeft: 'auto', fontSize: 14 }}>✓</span>}
-              </div>
-            ))}
+        <Section title="Currency" description="Used to display all amounts. Existing values are not converted.">
+          <div className="settings-currency-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(180px,1fr))', gap:8 }} role="radiogroup" aria-label="Currency">
+            {CURRENCIES.map(c => {
+              const selected = user?.currency === c.s;
+              return (
+                <button key={c.s} type="button" role="radio" aria-checked={selected} onClick={() => saveCurrency(c.s)} className={`option${selected ? ' selected' : ''}`}>
+                  <span className="num" style={{ fontWeight:600, minWidth:24 }}>{c.s}</span>
+                  <span style={{ flex:1, minWidth:0 }}>
+                    <span style={{ display:'block' }}>{c.l.split('–')[1]?.trim()}</span>
+                    <span className="option-sub">{c.l.split('–')[0].trim()}</span>
+                  </span>
+                  {selected && <Check size={15} style={{ color:'var(--accent)' }}/>}
+                </button>
+              );
+            })}
           </div>
-        </div>
+        </Section>
       )}
 
-      {/* Danger zone tab */}
+      {tab === 'appearance' && (
+        <Section title="Appearance" description="Choose a theme, or follow your device setting.">
+          <ThemeToggle/>
+        </Section>
+      )}
+
       {tab === 'danger' && (
-        <div className="card settings-card" style={{ maxWidth: 520, border: '1px solid #FF6B6B33' }}>
-          <div style={{ fontFamily: 'var(--font-serif)', fontSize: 20, marginBottom: 6, color: '#FF6B6B' }}>⚠️ Danger Zone</div>
-          <p style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginBottom: 24 }}>These actions are permanent and cannot be undone.</p>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Clear expenses */}
-            <div className="settings-danger-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--border)' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Clear All Expenses</div>
-                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>Delete every transaction permanently</div>
-              </div>
-              {!confirmClear ? (
-                <button className="ghost-btn" style={{ borderColor: '#FF6B6B44', color: '#FF6B6B' }} onClick={() => setConfirmClear(true)}>Clear Data</button>
-              ) : (
-                <div className="settings-danger-actions" style={{ display: 'flex', gap: 8 }}>
-                  <button className="ghost-btn" onClick={() => setConfirmClear(false)}>Cancel</button>
-                  <button className="gold-btn" style={{ background: 'linear-gradient(135deg,#FF6B6B,#EF4444)' }} onClick={clearAllData}>Confirm</button>
-                </div>
-              )}
-            </div>
-
-            {/* Logout */}
-            <div className="settings-danger-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0' }}>
-              <div>
-                <div style={{ fontSize: 14 }}>Sign Out</div>
-                <div style={{ fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--text-dim)', marginTop: 2 }}>Log out of your account</div>
-              </div>
-              <button className="ghost-btn" onClick={logout}>Sign Out ⇥</button>
-            </div>
-          </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+          <Section title="Session" description="Sign out of Aurum on this device.">
+            <button className="btn btn-secondary" onClick={logout}>Sign out</button>
+          </Section>
+          <Section title="Delete transaction data" tone="danger" description="Permanently remove every transaction on your account. This can't be undone.">
+            <button className="btn btn-danger-outline" onClick={() => setConfirmClear(true)}>Delete all transactions</button>
+          </Section>
         </div>
       )}
 
-      {/* App info footer */}
-      <div className="settings-app-info" style={{ marginTop: 32, padding: '16px 20px', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-        {[
-          { l: 'App',        v: 'Aurum v2.0' },
-          { l: 'Stack',      v: 'MERN + AI' },
-          // { l: 'AI Model',   v: 'Gemini' },
-          // { l: 'Database',   v: 'MongoDB' },
-        ].map(r => (
-          <div key={r.l}>
-            <div className="floating-label">{r.l}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 13, color: 'var(--gold)' }}>{r.v}</div>
-          </div>
-        ))}
-      </div>
+      <p className="text-3" style={{ fontSize:12.5, marginTop:32 }}>
+        Aurum v2.0 · <a href="/features" target="_blank" rel="noopener noreferrer" className="link-muted" style={{ textDecoration:'underline', textUnderlineOffset:3 }}>How Aurum works</a>
+      </p>
     </div>
   );
 }

@@ -1,20 +1,32 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
+import { Plus, Lightbulb, AlertTriangle, TrendingUp, Receipt, PiggyBank } from 'lucide-react';
 import api from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
-import { CATS, CAT_MAP, MONTHS } from '../utils/constants.js';
+import { useChartColors } from '../context/ThemeContext.jsx';
+import { CAT_MAP, formatMoney, formatDate } from '../utils/constants.js';
 import AddExpenseModal from '../components/AddExpenseModal.jsx';
+import { PageHeader, StatStrip, CategoryIcon, EmptyState, ChartTooltip } from '../components/ui/index.jsx';
+
+const INSIGHT_STYLE = {
+  tip:      { icon: Lightbulb,     color: 'var(--info)' },
+  warning:  { icon: AlertTriangle, color: 'var(--warning)' },
+  positive: { icon: TrendingUp,    color: 'var(--positive)' },
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const colors = useChartColors();
   const [showAdd,  setShowAdd]  = useState(false);
   const queryClient = useQueryClient();
 
   const now      = new Date();
   const month    = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   const currency = user?.currency || '$';
+  const money    = (v, opts) => formatMoney(v, currency, opts);
 
   const { data: dashboardData, isLoading, isError } = useQuery({
     queryKey: ['dashboard', month],
@@ -32,7 +44,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: insights = [] } = useQuery({
+  const { data: insights = [], isLoading: insightsLoading } = useQuery({
     queryKey: ['ai-insights'],
     queryFn: async () => {
       const { data } = await api.get('/ai/insights');
@@ -51,7 +63,7 @@ export default function Dashboard() {
   const handleAdd = async (form) => {
     try {
       await api.post('/expenses', form);
-      toast.success('Expense added ✓');
+      toast.success('Transaction added');
       setShowAdd(false);
       queryClient.invalidateQueries({ queryKey: ['dashboard'] });
       queryClient.invalidateQueries({ queryKey: ['expenses'] });
@@ -68,20 +80,23 @@ export default function Dashboard() {
     return { day: ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][d.getDay()], spent: entry?.total || 0 };
   });
 
-  const catData = (stats?.byCategory || []).map(b => ({
-    name: CAT_MAP[b._id]?.label || b._id,
-    value: b.total,
-    color: CAT_MAP[b._id]?.color || '#94A3B8',
-    icon:  CAT_MAP[b._id]?.icon  || '📦',
-  }));
+  const catData = (stats?.byCategory || [])
+    .map(b => ({
+      id:    b._id,
+      name:  CAT_MAP[b._id]?.label || b._id,
+      value: b.total,
+      color: colors.cat[b._id] || colors.cat.other,
+    }))
+    .sort((a, b) => b.value - a.value);
 
   const savings = (stats?.totalIncome || 0) - (stats?.totalExpenses || 0);
   const hr = now.getHours();
-  const greeting = hr < 12 ? 'Morning' : hr < 18 ? 'Afternoon' : 'Evening';
+  const greeting = hr < 12 ? 'Good morning' : hr < 18 ? 'Good afternoon' : 'Good evening';
+  const firstName = user?.name?.split(' ')[0];
 
   if (isLoading) return (
     <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:400 }}>
-      <div className="spinner" style={{ width:36, height:36 }}/>
+      <div className="spinner" style={{ width:24, height:24 }}/>
     </div>
   );
 
@@ -89,139 +104,150 @@ export default function Dashboard() {
     <div className="fade-in">
       {showAdd && <AddExpenseModal onClose={() => setShowAdd(false)} onSave={handleAdd} currency={currency}/>}
 
-      {/* Header */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:28 }}>
-        <div>
-          <h1 style={{ fontFamily:'var(--font-serif)', fontSize:30, fontWeight:600 }}>Good {greeting}, {user?.name?.split(' ')[0]} 👋</h1>
-          <p style={{ fontSize:12, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:4 }}>
-            {MONTHS[now.getMonth()]} {now.getFullYear()} · Financial Overview
-          </p>
-        </div>
-        <button className="gold-btn shine" onClick={() => setShowAdd(true)}>＋ Add Expense</button>
-      </div>
+      <PageHeader
+        title={`${greeting}${firstName ? `, ${firstName}` : ''}`}
+        description={`${now.toLocaleString('en', { month:'long' })} ${now.getFullYear()} overview`}
+        actions={<button className="btn btn-primary" onClick={() => setShowAdd(true)}><Plus size={16}/>Add transaction</button>}
+      />
 
-      {/* Stat Cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:14, marginBottom:24 }}>
-        {[
-          { label:'Monthly Spend', value: stats?.totalExpenses||0, color:'#FF6B6B', icon:'↑', sub:'This month' },
-          { label:'Total Income',  value: stats?.totalIncome||0,   color:'#10B981', icon:'↓', sub:'This month' },
-          { label:'Net Savings',   value: Math.abs(savings),       color: savings>=0?'#C9A84C':'#FF6B6B', icon:'◈', sub: savings>=0?'You\'re saving!':'Overspent' },
-          { label:'Transactions',  value: stats?.count||0,         color:'#60A5FA', icon:'#', sub:'This month', noCurr:true },
-        ].map(s => (
-          <div key={s.label} className="stat-card shine">
-            <div className="floating-label">{s.label}</div>
-            <div style={{ fontSize:26, fontWeight:700, fontFamily:'var(--font-serif)', color:s.color, marginBottom:4 }}>
-              {s.noCurr ? s.value : `${currency}${s.value.toLocaleString('en',{minimumFractionDigits:2,maximumFractionDigits:2})}`}
-            </div>
-            <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>{s.sub}</div>
-            <div style={{ position:'absolute', top:16, right:16, fontSize:22, opacity:.12, color:s.color }}>{s.icon}</div>
-          </div>
-        ))}
-      </div>
+      <StatStrip items={[
+        { label:'Spent this month', value: money(stats?.totalExpenses) },
+        { label:'Income',           value: money(stats?.totalIncome) },
+        { label:'Net savings',      value: `${savings < 0 ? '−' : ''}${money(Math.abs(savings))}`, tone: savings < 0 ? 'negative' : undefined,
+          sub: savings >= 0 ? 'Income minus spending' : 'Spending exceeds income' },
+        { label:'Transactions',     value: stats?.count || 0 },
+      ]}/>
 
-      {/* Charts row */}
-      <div style={{ display:'grid', gridTemplateColumns:'1.4fr 1fr', gap:16, marginBottom:20 }}>
-        {/* Weekly area chart */}
+      <div className="grid-chart">
         <div className="card">
-          <div className="floating-label" style={{marginBottom:4}}>Weekly Spending</div>
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:17, color:'var(--text)', marginBottom:14 }}>Last 7 Days</div>
-          <ResponsiveContainer width="100%" height={160}>
-            <AreaChart data={weeklyData}>
+          <div className="card-header">
+            <div>
+              <div className="card-title">Daily spending</div>
+              <div className="card-sub">Last 7 days</div>
+            </div>
+            <div className="num" style={{ fontSize:14, fontWeight:500 }}>{money(weeklyData.reduce((s, d) => s + d.spent, 0))}</div>
+          </div>
+          <ResponsiveContainer width="100%" height={180}>
+            <AreaChart data={weeklyData} margin={{ top:4, right:4, left:4, bottom:0 }}>
               <defs>
-                <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%"   stopColor="#C9A84C" stopOpacity={0.35}/>
-                  <stop offset="100%" stopColor="#C9A84C" stopOpacity={0}/>
+                <linearGradient id="spendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%"   stopColor={colors.accent} stopOpacity={0.14}/>
+                  <stop offset="100%" stopColor={colors.accent} stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <XAxis dataKey="day" tick={{ fill:'#4A5A6E', fontSize:11, fontFamily:"'DM Mono',monospace" }} axisLine={false} tickLine={false}/>
+              <CartesianGrid vertical={false} stroke={colors.grid}/>
+              <XAxis dataKey="day" tick={{ fill:colors.text3, fontSize:12 }} axisLine={{ stroke:colors.border }} tickLine={false} dy={6}/>
               <YAxis hide/>
-              <Tooltip contentStyle={{ background:'#0D1321', border:'1px solid #2A3A50', borderRadius:10, fontSize:12, fontFamily:"'DM Mono',monospace", color:'#E8DCC8' }}
-                formatter={v => [`${currency}${v.toFixed(2)}`, 'Spent']}/>
-              <Area type="monotone" dataKey="spent" stroke="#C9A84C" strokeWidth={2} fill="url(#spendGrad)"/>
+              <Tooltip cursor={{ stroke:colors.muted, strokeWidth:1 }} content={<ChartTooltip format={v => money(v)}/>}/>
+              <Area type="monotone" dataKey="spent" name="Spent" stroke={colors.accent} strokeWidth={2} fill="url(#spendFill)"
+                activeDot={{ r:4, strokeWidth:2, stroke:colors.surface, fill:colors.accent }}/>
             </AreaChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Category pie */}
         <div className="card">
-          <div className="floating-label" style={{marginBottom:8}}>By Category</div>
+          <div className="card-header">
+            <div>
+              <div className="card-title">By category</div>
+              <div className="card-sub">This month</div>
+            </div>
+          </div>
           {catData.length > 0 ? (
-            <div style={{ display:'flex', gap:12, alignItems:'center' }}>
-              <ResponsiveContainer width={120} height={130}>
-                <PieChart>
-                  <Pie data={catData} dataKey="value" cx="50%" cy="50%" innerRadius={34} outerRadius={54} paddingAngle={2}>
-                    {catData.map((c,i) => <Cell key={i} fill={c.color} opacity={.9}/>)}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:7 }}>
-                {catData.slice(0,5).map(c => (
-                  <div key={c.name} style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ width:7, height:7, borderRadius:'50%', background:c.color, flexShrink:0 }}/>
-                      <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{c.icon}</span>
-                    </div>
-                    <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--gold)' }}>{currency}{c.value.toFixed(0)}</span>
+            <div style={{ display:'flex', gap:20, alignItems:'center' }}>
+              <div style={{ width:132, height:132, flexShrink:0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={catData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={42} outerRadius={64}
+                      stroke={colors.surface} strokeWidth={2} isAnimationActive={false}>
+                      {catData.map(c => <Cell key={c.id} fill={c.color}/>)}
+                    </Pie>
+                    <Tooltip content={<ChartTooltip format={v => money(v)}/>}/>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="chart-legend">
+                {catData.slice(0, 6).map(c => (
+                  <div key={c.id} className="chart-legend-row">
+                    <span className="swatch" style={{ background:c.color }}/>
+                    <span className="name">{c.name}</span>
+                    <span className="value">{money(c.value, { decimals:0 })}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <div style={{ color:'var(--text-dim)', fontSize:12, textAlign:'center', paddingTop:30 }}>No spending data yet</div>
+            <EmptyState title="No spending yet" description="Categories appear once you log expenses."/>
           )}
         </div>
       </div>
 
-      {/* Budget progress + AI Insights */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
-        {/* Budget bars */}
+      <div className="grid-2">
         <div className="card">
-          <div className="floating-label" style={{marginBottom:12}}>Budget Status</div>
-          {budgets.length === 0 && <div style={{ fontSize:12, color:'var(--text-dim)', fontFamily:'var(--font-mono)' }}>No budgets set. Go to Budgets tab →</div>}
-          <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-            {budgets.map(b => {
-              const spent = stats?.byCategory?.find(c => c._id === b.category)?.total || 0;
-              const pct   = Math.min((spent / b.amount) * 100, 100);
-              const c     = CAT_MAP[b.category];
-              const color = pct > 90 ? '#FF6B6B' : pct > 70 ? '#FBBF24' : c?.color || '#C9A84C';
-              return (
-                <div key={b.category}>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                    <span style={{ fontSize:12, color:'var(--text-muted)' }}>{c?.icon} {c?.label}</span>
-                    <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color }}>{pct.toFixed(0)}%</span>
-                  </div>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width:`${pct}%`, background:color }}/>
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between', marginTop:4 }}>
-                    <span style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>{currency}{spent.toFixed(0)} spent</span>
-                    <span style={{ fontSize:10, fontFamily:'var(--font-mono)', color:'var(--text-dim)' }}>of {currency}{b.amount}</span>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="card-header">
+            <div className="card-title">Budgets</div>
+            <Link to="/budgets" className="link-muted" style={{ fontSize:13 }}>Manage</Link>
           </div>
+          {budgets.length === 0 ? (
+            <EmptyState icon={PiggyBank} title="No budgets set" description="Set monthly limits to track spending against them."
+              action={<Link to="/budgets" className="btn btn-secondary btn-sm">Set a budget</Link>}/>
+          ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+              {budgets.map(b => {
+                const spent = stats?.byCategory?.find(c => c._id === b.category)?.total || 0;
+                const pct   = Math.min((spent / b.amount) * 100, 100);
+                const c     = CAT_MAP[b.category];
+                const tone  = pct >= 100 ? 'var(--negative)' : pct >= 80 ? 'var(--warning)' : 'var(--text-2)';
+                return (
+                  <div key={b.category}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:6, gap:12 }}>
+                      <span style={{ fontSize:13.5, fontWeight:500 }}>{c?.label || b.category}</span>
+                      <span className="num" style={{ fontSize:13, color:'var(--text-2)' }}>
+                        {money(spent, { decimals:0 })} <span className="text-3">of {money(b.amount, { decimals:0 })}</span>
+                      </span>
+                    </div>
+                    <div className="progress">
+                      <div className="progress-fill" style={{ width:`${pct}%`, background:tone }}/>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* AI Insights */}
         <div className="card">
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-            <div className="floating-label" style={{marginBottom:0}}>AI Insights</div>
-            <span style={{ fontSize:9, background:'#C9A84C22', color:'var(--gold)', padding:'2px 8px', borderRadius:8, fontFamily:'var(--font-mono)' }}>POWERED BY Gemini</span>
-          </div>
-          {insights.length === 0 ? (
-            <div style={{ fontSize:12, color:'var(--text-dim)', fontFamily:'var(--font-mono)', textAlign:'center', paddingTop:20 }}>
-              <div style={{fontSize:28,marginBottom:8}}>✦</div>
-              Insights loading…
+          <div className="card-header">
+            <div>
+              <div className="card-title">Insights</div>
+              <div className="card-sub">Based on this month's activity</div>
             </div>
+          </div>
+          {insightsLoading ? (
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ display:'flex', gap:12 }}>
+                  <div className="skeleton" style={{ width:16, height:16, marginTop:2 }}/>
+                  <div style={{ flex:1 }}>
+                    <div className="skeleton" style={{ height:12, width:'45%', marginBottom:8 }}/>
+                    <div className="skeleton" style={{ height:10, width:'90%' }}/>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : insights.length === 0 ? (
+            <EmptyState icon={Lightbulb} title="Nothing to flag yet" description="Insights appear once there's enough activity this month."/>
           ) : (
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+            <div style={{ display:'flex', flexDirection:'column' }}>
               {insights.map((ins, i) => {
-                const typeColor = { tip:'#60A5FA', warning:'#FBBF24', positive:'#34D399' }[ins.type] || '#C9A84C';
+                const s = INSIGHT_STYLE[ins.type] || INSIGHT_STYLE.tip;
+                const Icon = s.icon;
                 return (
-                  <div key={i} style={{ padding:'10px 12px', background:'#1E2A3A55', borderRadius:10, borderLeft:`3px solid ${typeColor}` }}>
-                    <div style={{ fontSize:12, fontWeight:600, color:typeColor, marginBottom:4 }}>{ins.title}</div>
-                    <div style={{ fontSize:12, color:'var(--text-muted)', lineHeight:1.5 }}>{ins.description}</div>
+                  <div key={i} style={{ display:'flex', gap:12, padding:'12px 0', borderTop: i ? '1px solid var(--border)' : 0 }}>
+                    <Icon size={16} style={{ color:s.color, marginTop:2, flexShrink:0 }}/>
+                    <div>
+                      <div style={{ fontSize:13.5, fontWeight:500 }}>{ins.title}</div>
+                      <div style={{ fontSize:13, color:'var(--text-2)', marginTop:2, lineHeight:1.55 }}>{ins.description}</div>
+                    </div>
                   </div>
                 );
               })}
@@ -230,29 +256,34 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div className="card">
-        <div className="floating-label" style={{marginBottom:12}}>Recent Transactions</div>
-        {expenses.length === 0 && (
-          <div style={{ textAlign:'center', padding:30, color:'var(--text-dim)', fontFamily:'var(--font-mono)', fontSize:13 }}>
-            No transactions yet. Add your first expense!
+      <div className="card card-flush">
+        <div className="card-header" style={{ padding:'16px 20px 0', marginBottom:8 }}>
+          <div className="card-title">Recent transactions</div>
+          <Link to="/transactions" className="link-muted" style={{ fontSize:13 }}>View all</Link>
+        </div>
+        {expenses.length === 0 ? (
+          <EmptyState icon={Receipt} title="No transactions yet" description="Add your first expense or income to get started."
+            action={<button className="btn btn-secondary btn-sm" onClick={() => setShowAdd(true)}><Plus size={14}/>Add transaction</button>}/>
+        ) : (
+          <div className="list" style={{ borderTop:'1px solid var(--border)' }}>
+            {expenses.map(e => {
+              const c = CAT_MAP[e.cat];
+              const isIncome = e.cat === 'income';
+              return (
+                <div key={e._id} className="list-row">
+                  <CategoryIcon cat={e.cat}/>
+                  <div className="row-main">
+                    <div className="row-title">{e.desc}</div>
+                    <div className="row-meta"><span>{formatDate(e.date)}</span><span className="meta-sep"/><span>{c?.label}</span></div>
+                  </div>
+                  <div className={`row-amount${isIncome ? ' positive' : ''}`}>
+                    {isIncome ? '+' : '−'}{money(e.amount)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
-        {expenses.map(e => {
-          const c = CAT_MAP[e.cat];
-          return (
-            <div key={e._id} className="tx-row">
-              <div style={{ width:40, height:40, borderRadius:12, background:`${c?.color}22`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>{c?.icon}</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:14, color:'var(--text)' }}>{e.desc}</div>
-                <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginTop:2 }}>{e.date} · {c?.label}</div>
-              </div>
-              <div style={{ fontFamily:'var(--font-mono)', fontWeight:700, color: e.cat==='income'?'#10B981':'#FF6B6B', fontSize:15 }}>
-                {e.cat==='income' ? '+' : '-'}{currency}{e.amount.toFixed(2)}
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
