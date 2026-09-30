@@ -43,8 +43,26 @@ export default function Reports() {
     setGenerating(false);
   };
 
-  const downloadPDF = (month) => window.open(`/api/reports/${month}/pdf`, '_blank');
-  const downloadCSV = (month) => window.open(`/api/reports/${month}/csv`, '_blank');
+  // Download through the API client so the request is signed in and honours
+  // VITE_API_BASE_URL (a plain window.open would do neither).
+  const [downloading, setDownloading] = useState(null); // 'pdf' | 'csv' | null
+  const download = async (month, format) => {
+    setDownloading(format);
+    try {
+      const { data } = await api.get(`/reports/${month}/${format}`, { responseType: 'blob' });
+      const url = URL.createObjectURL(data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `aurum-${month}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      toast.error(`Couldn't download the ${format.toUpperCase()}. Please try again.`);
+    }
+    setDownloading(null);
+  };
 
   const formatMonth = (m) => {
     const [y, mon] = m.split('-');
@@ -100,8 +118,12 @@ export default function Reports() {
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:12 }}>
                 <h2 style={{ fontSize:18 }}>{formatMonth(selected.month)}</h2>
                 <div style={{ display:'flex', gap:8 }}>
-                  <button className="btn btn-secondary btn-sm" onClick={() => downloadCSV(selected.month)}><Download size={14}/>CSV</button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => downloadPDF(selected.month)}><Download size={14}/>PDF</button>
+                  {['csv', 'pdf'].map(format => (
+                    <button key={format} className="btn btn-secondary btn-sm" onClick={() => download(selected.month, format)} disabled={downloading !== null}>
+                      {downloading === format ? <span className="spinner"/> : <Download size={14}/>}
+                      {format.toUpperCase()}
+                    </button>
+                  ))}
                 </div>
               </div>
 

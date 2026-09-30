@@ -201,7 +201,9 @@ export default function Settings() {
         </div>
       )}
 
-      <p className="text-3" style={{ fontSize:12.5, marginTop:32 }}>Aurum v2.0</p>
+      <p className="text-3" style={{ fontSize:12.5, marginTop:32 }}>
+        Aurum v2.0 · <a href="/features" target="_blank" rel="noopener noreferrer" className="link-muted" style={{ textDecoration:'underline', textUnderlineOffset:3 }}>How Aurum works</a>
+      </p>
     </div>
   );
 }

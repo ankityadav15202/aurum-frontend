@@ -183,7 +183,14 @@ export default function Onboarding() {
             </div>
           )}
 
-          {step === 5 && continueBtn(finish, 'Go to dashboard')}
+          {step === 5 && (
+            <>
+              {continueBtn(finish, 'Go to dashboard')}
+              <p className="field-hint" style={{ textAlign:'center', marginTop:14 }}>
+                New here? <a href="/features" target="_blank" rel="noopener noreferrer" className="link" style={{ fontWeight:400 }}>Read the guide</a> to see everything Aurum can do.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

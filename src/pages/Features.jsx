@@ -5,8 +5,9 @@ import {
 } from 'lucide-react';
 import { CATS, CURRENCIES } from '../utils/constants.js';
 
-// Feature guide. Reachable only by URL (/features); intentionally not linked
-// from any navigation or button. Keep it user-facing: no endpoints or internals.
+// Public feature guide at /features, linked from the site footer, the app
+// sidebar, Settings and onboarding. Keep it user-facing: no endpoints or
+// internals. Update it when a feature's behavior or limits change.
 
 const SECTIONS = [
   {
@@ -188,19 +189,14 @@ const SECTIONS = [
 
 export default function Features() {
   useEffect(() => {
-    // Unlisted page: keep it out of search results.
     const prevTitle = document.title;
     document.title = 'Feature guide - Aurum';
-    const robots = document.createElement('meta');
-    robots.name = 'robots';
-    robots.content = 'noindex, nofollow';
-    document.head.appendChild(robots);
 
     // The browser tries to jump to #section before React renders it, so do it here.
     if (window.location.hash) {
       document.getElementById(decodeURIComponent(window.location.hash.slice(1)))?.scrollIntoView();
     }
-    return () => { document.title = prevTitle; robots.remove(); };
+    return () => { document.title = prevTitle; };
   }, []);
 
   return (

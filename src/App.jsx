@@ -3,10 +3,10 @@ import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   LayoutDashboard, ArrowLeftRight, PiggyBank, BarChart3, MessageSquareText,
-  MessageCircle, Settings as SettingsIcon, ShieldCheck, LogOut, RotateCw,
+  MessageCircle, Settings as SettingsIcon, ShieldCheck, LogOut, RotateCw, HelpCircle,
 } from 'lucide-react';
 import { useAuth } from './context/AuthContext.jsx';
-import { Logo, ThemeToggle, Badge } from './components/ui/index.jsx';
+import { Logo, ThemeToggle, Badge, SiteFooter } from './components/ui/index.jsx';
 
 // Public pages
 import Landing      from './pages/Landing.jsx';
@@ -156,6 +156,9 @@ function Layout({ children }) {
             <ThemeToggle variant="compact"/>
             <div style={{ display:'flex', gap:2 }}>
               {refreshButton}
+              <a href="/features" target="_blank" rel="noopener noreferrer" className="icon-btn" title="Guide: how Aurum works" aria-label="Guide: how Aurum works (opens in a new tab)">
+                <HelpCircle size={16}/>
+              </a>
               <button onClick={handleLogout} className="icon-btn" title="Log out" aria-label="Log out">
                 <LogOut size={16}/>
               </button>
@@ -191,6 +194,7 @@ function PublicLayout({ children }) {
         </div>
       </nav>
       <div style={{ padding:'0 20px' }}>{children}</div>
+      <SiteFooter/>
     </div>
   );
 }

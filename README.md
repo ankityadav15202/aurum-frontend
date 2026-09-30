@@ -172,7 +172,7 @@ There are no automated tests or lint scripts yet.
 | `/dashboard`, `/transactions`, `/budgets`, `/reports`, `/ai`, `/feedback`, `/settings` | App | Logged in and onboarding completed |
 | `/admin` | Users & access | Logged-in admins (others are sent to `/dashboard`) |
 | `/about`, `/contact`, `/privacy-policy`, `/terms` | Info pages | Public |
-| `/features` | Feature guide: a plain-language walkthrough of every feature | Public, **unlisted**. Not linked from any button or menu; open it by URL. Marked `noindex` so search engines skip it. |
+| `/features` | Feature guide: a plain-language walkthrough of every feature | Public. Linked as "Guide" in the site footer, the help icon in the app sidebar, Settings and the last onboarding step (in-app links open in a new tab). |
 | anything else | — | Redirects to `/` |
 
 ---
@@ -318,7 +318,6 @@ Any static host works the same way, as long as it serves `index.html` for unknow
 
 ## Known issues
 
-- **PDF/CSV export on Reports probably fails.** The buttons open the export in a new tab, bypassing the Axios client, so the request isn't signed in and ignores `VITE_API_BASE_URL`. The fix is to download the file through the Axios client (as a blob).
 - **The Privacy Policy promises account deletion** ("Settings → Account"). The app can currently delete all transactions, but not the account itself.
 - **Onboarding uses UTC dates** (`toISOString()`) for the first income and transaction. Users east of UTC who complete onboarding shortly after midnight get the previous day. Switch these to `toISODate()` / `toISOMonth()`.
 - **Single bundle** (~960 kB minified, ~280 kB gzipped). Lazy-loading routes with `React.lazy` would improve first load.

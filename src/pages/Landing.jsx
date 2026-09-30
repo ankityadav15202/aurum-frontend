@@ -2,7 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Receipt, PiggyBank, MessageSquareText, FileBarChart, Coins, Repeat, Plus, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
-import { Logo, ThemeToggle, CategoryIcon } from '../components/ui/index.jsx';
+import { Logo, ThemeToggle, CategoryIcon, SiteFooter } from '../components/ui/index.jsx';
 
 const FEATURES = [
   { icon:Receipt,           title:'Fast expense logging',   desc:'Add a transaction in a few taps. Aurum suggests a category from the description so you don’t have to pick one.' },
@@ -196,18 +196,7 @@ export default function Landing() {
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="container">
-          <Logo/>
-          <nav>
-            <Link to="/about">About</Link>
-            <Link to="/contact">Contact</Link>
-            <Link to="/privacy-policy">Privacy</Link>
-            <Link to="/terms">Terms</Link>
-          </nav>
-          <div className="copy">© {new Date().getFullYear()} Aurum</div>
-        </div>
-      </footer>
+      <SiteFooter/>
     </div>
   );
 }
