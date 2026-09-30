@@ -19,6 +19,7 @@ import About        from './pages/About.jsx';
 import Contact      from './pages/Contact.jsx';
 import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 import Terms        from './pages/Terms.jsx';
+import Features     from './pages/Features.jsx';
 
 // App pages (require auth)
 import Dashboard    from './pages/Dashboard.jsx';
@@ -227,6 +228,9 @@ export default function App() {
       <Route path="/contact"        element={<PublicLayout><Contact        /></PublicLayout>} />
       <Route path="/privacy-policy" element={<PublicLayout><PrivacyPolicy  /></PublicLayout>} />
       <Route path="/terms"          element={<PublicLayout><Terms          /></PublicLayout>} />
+
+      {/* Unlisted feature guide: reachable by URL only, intentionally not linked anywhere */}
+      <Route path="/features"       element={<PublicLayout><Features       /></PublicLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

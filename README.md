@@ -172,6 +172,7 @@ There are no automated tests or lint scripts yet.
 | `/dashboard`, `/transactions`, `/budgets`, `/reports`, `/ai`, `/feedback`, `/settings` | App | Logged in and onboarding completed |
 | `/admin` | Users & access | Logged-in admins (others are sent to `/dashboard`) |
 | `/about`, `/contact`, `/privacy-policy`, `/terms` | Info pages | Public |
+| `/features` | Feature guide: a plain-language walkthrough of every feature | Public, **unlisted**. Not linked from any button or menu; open it by URL. Marked `noindex` so search engines skip it. |
 | anything else | — | Redirects to `/` |
 
 ---
