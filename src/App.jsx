@@ -1,7 +1,12 @@
-import { Routes, Route, Navigate, NavLink, useLocation, useNavigate, Link } from 'react-router-dom';
+import { Routes, Route, Navigate, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import {
+  LayoutDashboard, ArrowLeftRight, PiggyBank, BarChart3, MessageSquareText,
+  MessageCircle, Settings as SettingsIcon, ShieldCheck, LogOut, RotateCw,
+} from 'lucide-react';
 import { useAuth } from './context/AuthContext.jsx';
+import { Logo, ThemeToggle, Badge } from './components/ui/index.jsx';
 
 // Public pages
 import Landing      from './pages/Landing.jsx';
@@ -28,21 +33,21 @@ import Admin        from './pages/Admin.jsx';
 
 // ── Nav items ─────────────────────────────────────────
 const NAV = [
-  { to:'/dashboard',    icon:'◈', label:'Dashboard'    },
-  { to:'/transactions', icon:'≡', label:'Transactions' },
-  { to:'/budgets',      icon:'◎', label:'Budgets'      },
-  { to:'/reports',      icon:'📊', label:'Reports'     },
-  { to:'/ai',           icon:'✦', label:'AI Advisor', badge:'AI' },
-  { to:'/feedback',     icon:'💬', label:'Feedback'    },
-  { to:'/settings',     icon:'⚙', label:'Settings'     },
+  { to:'/dashboard',    icon:LayoutDashboard,   label:'Dashboard',    short:'Home'     },
+  { to:'/transactions', icon:ArrowLeftRight,    label:'Transactions', short:'Activity' },
+  { to:'/budgets',      icon:PiggyBank,         label:'Budgets',      short:'Budgets'  },
+  { to:'/reports',      icon:BarChart3,         label:'Reports',      short:'Reports'  },
+  { to:'/ai',           icon:MessageSquareText, label:'Advisor',      short:'Advisor'  },
+  { to:'/feedback',     icon:MessageCircle,     label:'Feedback',     short:'Feedback' },
+  { to:'/settings',     icon:SettingsIcon,      label:'Settings',     short:'Settings' },
 ];
 
 // ── Guards ────────────────────────────────────────────
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return (
-    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'#080C14' }}>
-      <div className="spinner" style={{ width:36, height:36 }}/>
+    <div style={{ minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center' }}>
+      <div className="spinner" style={{ width:24, height:24 }}/>
     </div>
   );
   if (!user) return <Navigate to="/login" replace/>;
@@ -56,6 +61,16 @@ function PublicOnlyRoute({ children }) {
   return user ? <Navigate to="/dashboard" replace/> : children;
 }
 
+function NavItem({ to, icon: Icon, label, short }) {
+  return (
+    <NavLink to={to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+      <Icon size={17} strokeWidth={1.75}/>
+      <span className="nav-label">{label}</span>
+      <span className="nav-short">{short}</span>
+    </NavLink>
+  );
+}
+
 // ── App Layout ────────────────────────────────────────
 function Layout({ children }) {
   const { user, logout } = useAuth();
@@ -63,15 +78,10 @@ function Layout({ children }) {
   const location = useLocation();
   const queryClient = useQueryClient();
 
-  const handleLogout = () => { 
-    logout(); 
+  const handleLogout = () => {
+    logout();
     queryClient.clear();
-    navigate('/'); 
-  };
-  const navIcon = (item) => {
-    if (item.label === 'Reports') return '\u25A5';
-    if (item.label === 'Feedback') return '\u2709\uFE0E';
-    return item.icon;
+    navigate('/');
   };
   const refreshKeysByPath = {
     '/dashboard': [['dashboard'], ['ai-insights']],
@@ -83,82 +93,77 @@ function Layout({ children }) {
   const refreshKeys = refreshKeysByPath[location.pathname] || [];
   const isRefreshing = useIsFetching();
   const refreshPage = async () => {
-    const toastId = toast.loading('Refreshing...');
+    const toastId = toast.loading('Refreshing…');
     try {
       await Promise.all(refreshKeys.map(queryKey => queryClient.invalidateQueries({ queryKey })));
-      toast.success('Data refreshed', { id: toastId });
+      toast.success('Up to date', { id: toastId });
     } catch {
       toast.error('Refresh failed', { id: toastId });
     }
   };
+  const initial = user?.name?.[0]?.toUpperCase() || 'U';
+  const refreshButton = refreshKeys.length > 0 && (
+    <button
+      className="icon-btn refresh-btn"
+      type="button"
+      onClick={refreshPage}
+      disabled={isRefreshing > 0}
+      title="Refresh data"
+      aria-label="Refresh data"
+    >
+      <RotateCw size={16}/>
+    </button>
+  );
 
   return (
     <div className="app-layout">
-      {/* Mobile Top Header */}
-      <header className="mobile-header" style={{ position:'sticky', top:0, zIndex:45, background:'#080C14ee', backdropFilter:'blur(16px)', borderBottom:'1px solid var(--border)', padding:'12px 20px', display:'none', justifyContent:'space-between', alignItems:'center', width:'100%' }}>
-        <div style={{ fontFamily:'var(--font-serif)', fontSize:18, fontWeight:700, color:'var(--gold)' }}>✦ Aurum</div>
-        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-          <span style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-muted)' }}>{user?.name}</span>
-          {user?.unlimitedAI && (
-            <span style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', fontSize:8, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase' }}>PRO</span>
-          )}
+      {/* Mobile top header */}
+      <header className="mobile-header">
+        <Logo/>
+        <div className="right">
+          {user?.unlimitedAI && <Badge tone="accent">Pro</Badge>}
+          {refreshButton}
+          <ThemeToggle variant="cycle"/>
+          <span className="avatar" title={user?.name}>{initial}</span>
         </div>
       </header>
 
       <aside className="sidebar">
-        {/* Logo - hidden on mobile */}
-        <Link 
-          to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} 
-          style={{ marginBottom:24, paddingLeft:4, textDecoration:'none', display:'block' }}
-          className="logo-link"
-        >
-          <div style={{ fontFamily:'var(--font-serif)', fontSize:22, fontWeight:700, color:'var(--gold)', letterSpacing:1 }} className="logo-text">✦ Aurum</div>
-          <div style={{ fontSize:9, fontFamily:'var(--font-mono)', color:'#3A4A5E', letterSpacing:2, marginTop:2 }} className="logo-text">EXPENSE TRACKER</div>
-        </Link>
+        <div className="sidebar-logo"><Logo/></div>
 
-        {NAV.map(n => (
-          <NavLink key={n.to} to={n.to} className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-            <span style={{ fontSize:15, flexShrink:0 }}>{navIcon(n)}</span>
-            <span className="nav-label">{n.label}</span>
-            {n.badge && <span className="nav-label" style={{ marginLeft:'auto', background:'#C9A84C22', color:'var(--gold)', fontSize:9, padding:'2px 6px', borderRadius:8 }}>{n.badge}</span>}
-          </NavLink>
-        ))}
+        {NAV.map(n => <NavItem key={n.to} {...n}/>)}
 
         {user?.isAdmin && (
-          <NavLink to="/admin" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-            <span style={{ fontSize:15, flexShrink:0 }}>🛡</span>
-            <span className="nav-label">Admin Panel</span>
-          </NavLink>
+          <>
+            <div className="sidebar-section">Admin</div>
+            <NavItem to="/admin" icon={ShieldCheck} label="Users & access" short="Admin"/>
+          </>
         )}
 
-        {/* Logout - hidden on mobile (in settings instead) */}
-        <div style={{ marginTop:'auto', paddingTop:16, borderTop:'1px solid var(--border)' }}>
-          <div style={{ fontSize:11, fontFamily:'var(--font-mono)', color:'var(--text-dim)', marginBottom:8, paddingLeft:4, display:'flex', alignItems:'center', gap:6 }} className="nav-label">
-            <span style={{ overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.name}</span>
-            {user?.unlimitedAI && (
-              <span style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', fontSize:8, fontWeight:800, padding:'1px 5px', borderRadius:4, letterSpacing:0.5, textTransform:'uppercase', flexShrink:0 }}>PRO</span>
-            )}
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <span className="avatar">{initial}</span>
+            <div className="who">
+              <div className="name">
+                <span>{user?.name}</span>
+                {user?.unlimitedAI && <Badge tone="accent">Pro</Badge>}
+              </div>
+              <div className="email">{user?.email}</div>
+            </div>
           </div>
-          <button onClick={handleLogout} className="ghost-btn" style={{ width:'100%', padding:'8px' }}>
-            <span style={{ marginRight:6 }}>⇥</span>
-            <span className="nav-label">Logout</span>
-          </button>
+          <div className="sidebar-actions">
+            <ThemeToggle variant="compact"/>
+            <div style={{ display:'flex', gap:2 }}>
+              {refreshButton}
+              <button onClick={handleLogout} className="icon-btn" title="Log out" aria-label="Log out">
+                <LogOut size={16}/>
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
-      <main className={`main-content${refreshKeys.length > 0 ? ' has-page-refresh' : ''}`}>
-        {refreshKeys.length > 0 && (
-          <button
-            className="page-refresh-btn"
-            type="button"
-            onClick={refreshPage}
-            disabled={isRefreshing > 0}
-            title="Refresh this page"
-            aria-label="Refresh this page"
-          >
-            <span>{'\u21bb'}</span>
-          </button>
-        )}
+      <main className="main-content">
         {children}
       </main>
     </div>
@@ -169,15 +174,22 @@ function Layout({ children }) {
 function PublicLayout({ children }) {
   const { user } = useAuth();
   return (
-    <div style={{ minHeight:'100vh', background:'var(--bg)', color:'var(--text)' }}>
-      <nav style={{ position:'sticky', top:0, zIndex:50, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid var(--border)', padding:'14px 28px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:'var(--font-serif)', fontSize:20, fontWeight:700, color:'var(--gold)', letterSpacing:1, textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
-        <div style={{ display:'flex', gap:16 }}>
-          <NavLink to="/login"    style={{ color:'var(--text-muted)', textDecoration:'none', fontSize:13, fontFamily:'var(--font-mono)' }}>Login</NavLink>
-          <NavLink to="/register" style={{ background:'var(--gold-dim)', border:'1px solid #C9A84C44', color:'var(--gold)', textDecoration:'none', fontSize:12, fontFamily:'var(--font-mono)', padding:'6px 16px', borderRadius:8 }}>Register</NavLink>
+    <div style={{ minHeight:'100vh' }}>
+      <nav className="public-nav">
+        <Logo/>
+        <div className="public-nav-actions">
+          <ThemeToggle variant="cycle"/>
+          {user ? (
+            <NavLink to="/dashboard" className="btn btn-primary btn-sm">Open app</NavLink>
+          ) : (
+            <>
+              <NavLink to="/login" className="btn btn-ghost btn-sm">Log in</NavLink>
+              <NavLink to="/register" className="btn btn-primary btn-sm">Get started</NavLink>
+            </>
+          )}
         </div>
       </nav>
-      <div style={{ maxWidth:1100, margin:'0 auto', padding:'32px 24px 60px' }}>{children}</div>
+      <div style={{ padding:'0 20px' }}>{children}</div>
     </div>
   );
 }

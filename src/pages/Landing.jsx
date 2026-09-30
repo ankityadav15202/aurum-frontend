@@ -1,36 +1,72 @@
-import { Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext.jsx';
+import { Link, useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Receipt, PiggyBank, MessageSquareText, FileBarChart, Coins, Repeat, Plus, Menu, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext.jsx';
+import { Logo, ThemeToggle, CategoryIcon } from '../components/ui/index.jsx';
 
 const FEATURES = [
-  { icon:'🍽️', title:'Expense Tracking',       desc:'Log every transaction in seconds with smart AI auto-categorization across 10 categories.' },
-  { icon:'🎯', title:'Budget Management',       desc:'Set monthly budgets per category and get real-time alerts before you overspend.' },
-  { icon:'✦',  title:'AI Financial Advisor',   desc:'Chat with Gemini AI using your real spending data for personalized financial advice.' },
-  { icon:'📊', title:'Financial Insights',      desc:'Beautiful charts and auto-generated monthly insights to understand your money habits.' },
-  { icon:'🏆', title:'Goal Tracking',           desc:'Set savings goals and track progress month over month. (Coming Soon)' },
-  { icon:'☁️', title:'Secure Cloud Storage',   desc:'Your data is encrypted, backed up, and accessible from any device.' },
+  { icon:Receipt,           title:'Fast expense logging',   desc:'Add a transaction in a few taps. Aurum suggests a category from the description so you don’t have to pick one.' },
+  { icon:PiggyBank,         title:'Monthly budgets',        desc:'Set a limit per category and see at a glance which ones are on track, close to the limit, or over.' },
+  { icon:MessageSquareText, title:'An advisor that knows your numbers', desc:'Ask plain questions about your spending. Answers are based on your actual transactions and budgets.' },
+  { icon:FileBarChart,      title:'Monthly reports',        desc:'A summary of income, spending and savings rate for any month, exportable as PDF or CSV.' },
+  { icon:Repeat,            title:'Recurring transactions', desc:'Mark rent, subscriptions and salary as recurring so regular entries stay accurate without re-typing.' },
+  { icon:Coins,             title:'Eight currencies',       desc:'Use USD, EUR, GBP, JPY, INR, KRW, AUD or CAD, and switch at any time from Settings.' },
 ];
 
-const BENEFITS = [
-  { icon:'🔍', text:'Understand your spending habits with AI-powered analysis' },
-  { icon:'💰', text:'Build budgets that actually work and stick to them' },
-  { icon:'📈', text:'Increase your savings rate month over month' },
-  { icon:'🧠', text:'Make smarter financial decisions with real data' },
-];
-
-const TESTIMONIALS = [
-  { name:'Priya M.',    role:'Software Engineer',   text:'Aurum completely changed how I manage money. The AI advisor feels like having a personal CFO.' },
-  { name:'James K.',    role:'Freelancer',           text:'Finally an expense app that doesn\'t feel like a chore. The AI auto-categorization saves me so much time.' },
-  { name:'Aisha R.',    role:'Product Manager',      text:'The monthly reports helped me cut my dining spend by 30%. Absolutely worth it.' },
+const STEPS = [
+  { title:'Log what you spend',   desc:'Record expenses and income as they happen, or add the week’s receipts in one sitting.' },
+  { title:'Set sensible limits',  desc:'Pick the categories that matter to you and give each one a monthly budget.' },
+  { title:'Review and adjust',    desc:'Check the dashboard, read the monthly report, and ask the advisor where to cut back.' },
 ];
 
 const FAQS = [
-  { q:'What is Aurum?',              a:'Aurum is an AI-powered personal finance tracker that helps you log expenses, set budgets, and receive personalized financial advice powered by Gemini AI.' },
-  { q:'Is my data secure?',          a:'Yes. All data is encrypted in transit and at rest. We use MongoDB with strict access controls, and your API keys are never exposed to the browser.' },
-  { q:'Can I use multiple currencies?', a:'Absolutely. Aurum supports USD, EUR, GBP, JPY, INR, KRW, AUD, and CAD. You can change your currency anytime from Settings.' },
-  { q:'How does the AI help?',       a:'The AI Advisor (powered by Gemini) has full access to your transaction history, budgets, and spending patterns. It provides personalized insights, forecasts, and savings tips in a conversational format.' },
+  { q:'What is Aurum?',                 a:'Aurum is a personal expense tracker. You log expenses and income, set monthly budgets, and get reports and suggestions based on your own data.' },
+  { q:'Is my data secure?',             a:'Data is encrypted in transit, passwords are hashed with bcrypt, and API keys stay on the server. We don’t sell or share your data for marketing.' },
+  { q:'Which currencies are supported?', a:'USD, EUR, GBP, JPY, INR, KRW, AUD and CAD. You can change your currency at any time from Settings.' },
+  { q:'How does the advisor work?',     a:'When you ask a question, the advisor (built on Google’s Gemini) is given a summary of your transactions and budgets so it can answer specifically. It offers general guidance, not professional financial advice.' },
+  { q:'Does it cost anything?',         a:'Tracking, budgets and reports are free. Free accounts include a small number of advisor questions.' },
 ];
+
+const PREVIEW_ROWS = [
+  { cat:'food',      desc:'Trader Joe’s',        meta:'Food & Dining · Today',       amount:'−$64.18' },
+  { cat:'transport', desc:'Monthly transit pass', meta:'Transport · Yesterday',       amount:'−$98.00' },
+  { cat:'income',    desc:'Salary',               meta:'Income · Sep 1',              amount:'+$4,200.00', positive:true },
+  { cat:'bills',     desc:'Electricity',          meta:'Bills & Utilities · Aug 29',  amount:'−$72.40' },
+];
+
+function ProductPreview() {
+  return (
+    <div className="preview" aria-hidden="true">
+      <div className="preview-bar"><i/><i/><i/><span>Dashboard</span></div>
+      <div className="preview-body">
+        <div className="stat-strip" style={{ '--cols':3 }}>
+          <div className="stat"><div className="stat-label">Spent</div><div className="stat-value">$1,842.60</div></div>
+          <div className="stat"><div className="stat-label">Income</div><div className="stat-value">$4,200.00</div></div>
+          <div className="stat"><div className="stat-label">Saved</div><div className="stat-value">$2,357.40</div></div>
+        </div>
+        <div className="card" style={{ padding:14 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:8 }}>
+            <span style={{ fontWeight:500 }}>Food &amp; Dining</span>
+            <span className="num text-2">$412 <span className="text-3">of $500</span></span>
+          </div>
+          <div className="progress"><div className="progress-fill" style={{ width:'82%', background:'var(--warning)' }}/></div>
+        </div>
+        <div className="card card-flush list">
+          {PREVIEW_ROWS.map(r => (
+            <div key={r.desc} className="list-row">
+              <CategoryIcon cat={r.cat} size="sm"/>
+              <div className="row-main">
+                <div className="row-title" style={{ fontSize:13.5 }}>{r.desc}</div>
+                <div className="row-meta" style={{ fontSize:12 }}>{r.meta}</div>
+              </div>
+              <div className={`row-amount${r.positive ? ' positive' : ''}`} style={{ fontSize:13.5 }}>{r.amount}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Landing() {
   const { user }   = useAuth();
@@ -40,248 +76,137 @@ export default function Landing() {
   useEffect(() => { if (user) navigate('/dashboard'); }, [user]);
 
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
   }, [menuOpen]);
 
+  const close = () => setMenuOpen(false);
+
   return (
-    <div style={{ fontFamily:"'Georgia',serif", background:'#080C14', color:'#E8DCC8', overflowX:'hidden' }}>
-      <style>{`
-        .land-nav a { color:#8A9AAE; text-decoration:none; font-size:13px; font-family:'DM Mono',monospace; transition:color .2s; }
-        .land-nav a:hover { color:#C9A84C; }
-        .faq-item summary { cursor:pointer; font-size:15px; color:#E8DCC8; padding:16px 0; list-style:none; display:flex; justify-content:space-between; align-items:center; }
-        .faq-item summary::after { content:'＋'; color:#C9A84C; font-size:18px; }
-        details[open] summary::after { content:'－'; }
-        .faq-item p { color:#8A9AAE; font-size:14px; line-height:1.8; padding-bottom:16px; }
-        
-        .burger-btn {
-          display: none;
-          background: transparent;
-          border: none;
-          cursor: pointer;
-          padding: 0;
-          z-index: 100;
-          position: relative;
-          flex-direction: column;
-          justify-content: space-between;
-          width: 24px;
-          height: 18px;
-        }
-        .burger-line {
-          width: 100%;
-          height: 2px;
-          background-color: #E8DCC8;
-          transition: transform 0.3s ease, opacity 0.3s ease, background-color 0.3s ease;
-        }
-        .burger-btn.open .line-1 {
-          transform: translateY(8px) rotate(45deg);
-          background-color: #C9A84C;
-        }
-        .burger-btn.open .line-2 {
-          opacity: 0;
-        }
-        .burger-btn.open .line-3 {
-          transform: translateY(-8px) rotate(-45deg);
-          background-color: #C9A84C;
-        }
-
-        .mobile-nav-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: #080C14FC;
-          backdrop-filter: blur(24px);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 24px;
-          padding: 24px;
-          z-index: 98;
-          opacity: 0;
-          pointer-events: none;
-          transform: translateY(-20px);
-          transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .mobile-nav-overlay.open {
-          opacity: 1;
-          pointer-events: auto;
-          transform: translateY(0);
-        }
-        .mobile-nav-overlay a {
-          font-size: 18px;
-          font-family: 'DM Mono', monospace;
-          color: #8A9AAE;
-          text-decoration: none;
-          transition: color 0.2s, transform 0.2s;
-        }
-        .mobile-nav-overlay a:hover {
-          color: #C9A84C;
-          transform: scale(1.05);
-        }
-
-        @media(max-width:768px){
-          .hero-btns{flex-direction:column;align-items:center}
-          .feat-grid{grid-template-columns:1fr!important}
-          .ben-grid{grid-template-columns:1fr!important}
-          .test-grid{grid-template-columns:1fr!important}
-          .desktop-nav { display: none !important; }
-          .burger-btn { display: flex; }
-        }
-      `}</style>
-
-      {/* NAV */}
-      <nav className="land-nav" style={{ position:'sticky', top:0, zIndex:99, background:'#080C1499', backdropFilter:'blur(16px)', borderBottom:'1px solid #1E2A3A', padding:'14px 40px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:22, fontWeight:700, color:'#C9A84C', letterSpacing:1, textDecoration:'none', zIndex: 100, position: 'relative' }} className="logo-link" onClick={() => setMenuOpen(false)}>✦ Aurum</Link>
-        <div className="desktop-nav" style={{ display:'flex', gap:28, alignItems:'center' }}>
+    <div className="landing">
+      <nav className="public-nav">
+        <Logo/>
+        <div className="landing-links">
           <a href="#features">Features</a>
-          <a href="#benefits">Why Aurum</a>
+          <a href="#how">How it works</a>
           <a href="#faq">FAQ</a>
           <Link to="/contact">Contact</Link>
-          <Link to="/login"    style={{ color:'#E8DCC8' }}>Login</Link>
-          <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'8px 20px', borderRadius:9, fontFamily:"'DM Mono',monospace", fontSize:12, fontWeight:700, textDecoration:'none' }}>Get Started →</Link>
         </div>
-
-        {/* Mobile Burger Button */}
-        <button 
-          className={`burger-btn ${menuOpen ? 'open' : ''}`} 
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-          aria-expanded={menuOpen}
-        >
-          <span className="burger-line line-1"></span>
-          <span className="burger-line line-2"></span>
-          <span className="burger-line line-3"></span>
-        </button>
+        <div className="public-nav-actions">
+          <ThemeToggle variant="cycle"/>
+          <Link to="/login" className="btn btn-ghost btn-sm hide-sm">Log in</Link>
+          <Link to="/register" className="btn btn-primary btn-sm hide-sm">Get started</Link>
+          <button className="icon-btn burger" onClick={() => setMenuOpen(o => !o)} aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen}>
+            {menuOpen ? <X size={20}/> : <Menu size={20}/>}
+          </button>
+        </div>
       </nav>
 
-      {/* Mobile Nav Overlay */}
-      <div className={`mobile-nav-overlay ${menuOpen ? 'open' : ''}`}>
-        <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
-        <a href="#benefits" onClick={() => setMenuOpen(false)}>Why Aurum</a>
-        <a href="#faq" onClick={() => setMenuOpen(false)}>FAQ</a>
-        <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact</Link>
-        <Link to="/login" style={{ color:'#E8DCC8' }} onClick={() => setMenuOpen(false)}>Login</Link>
-        <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'12px 32px', borderRadius:9, fontFamily:"'DM Mono',monospace", fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center', width:'80%', maxWidth: 280 }} onClick={() => setMenuOpen(false)}>Get Started →</Link>
+      <div className={`mobile-menu${menuOpen ? ' open' : ''}`}>
+        <a href="#features" onClick={close}>Features</a>
+        <a href="#how" onClick={close}>How it works</a>
+        <a href="#faq" onClick={close}>FAQ</a>
+        <Link to="/contact" onClick={close}>Contact</Link>
+        <Link to="/login" onClick={close}>Log in</Link>
+        <Link to="/register" className="btn btn-primary btn-lg btn-block" onClick={close}>Get started</Link>
       </div>
 
-      {/* HERO */}
-      <section style={{ minHeight:'90vh', display:'flex', alignItems:'center', justifyContent:'center', textAlign:'center', padding:'60px 24px', position:'relative', overflow:'hidden' }}>
-        <div style={{ position:'absolute', inset:0, background:'radial-gradient(ellipse at 50% 30%, #1A2A1A 0%, #080C14 60%)', opacity:.6 }}/>
-        <div style={{ position:'relative', zIndex:1, maxWidth:760 }}>
-          <div style={{ display:'inline-block', background:'#C9A84C22', border:'1px solid #C9A84C44', borderRadius:20, padding:'6px 18px', marginBottom:24, fontSize:12, fontFamily:"'DM Mono',monospace", color:'#C9A84C', letterSpacing:1 }}>✦ AI-POWERED PERSONAL FINANCE</div>
-          <h1 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(40px,6vw,72px)', fontWeight:700, lineHeight:1.15, marginBottom:20 }}>
-            Take Control of Your<br/><span style={{ color:'#C9A84C' }}>Money with AI</span>
-          </h1>
-          <p style={{ fontSize:'clamp(15px,2vw,19px)', color:'#8A9AAE', lineHeight:1.8, marginBottom:40, maxWidth:560, margin:'0 auto 40px' }}>
-            Track expenses, manage budgets, and get personalized financial advice powered by Gemini AI - all in one beautiful app.
-          </p>
-          <div className="hero-btns" style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap' }}>
-            <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'15px 36px', borderRadius:12, fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:14, textDecoration:'none', letterSpacing:.5 }}>Get Started Free →</Link>
-            <Link to="/login"    style={{ background:'transparent', color:'#E8DCC8', padding:'15px 36px', borderRadius:12, border:'1px solid #2A3A50', fontFamily:"'DM Mono',monospace", fontSize:14, textDecoration:'none' }}>Login</Link>
-          </div>
-          <p style={{ fontSize:12, color:'#3A4A5E', fontFamily:"'DM Mono',monospace", marginTop:20 }}>Free to use · No credit card required</p>
-        </div>
-      </section>
-
-      {/* FEATURES */}
-      <section id="features" style={{ padding:'80px 40px', maxWidth:1100, margin:'0 auto' }}>
-        <div style={{ textAlign:'center', marginBottom:56 }}>
-          <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:'#C9A84C', letterSpacing:3, marginBottom:12 }}>FEATURES</div>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(28px,4vw,44px)', fontWeight:600 }}>Everything you need to manage money</h2>
-        </div>
-        <div className="feat-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20 }}>
-          {FEATURES.map(f => (
-            <div key={f.title} style={{ background:'#0D1321', border:'1px solid #1E2A3A', borderRadius:16, padding:24, transition:'border-color .2s' }}
-              onMouseEnter={e=>e.currentTarget.style.borderColor='#C9A84C33'}
-              onMouseLeave={e=>e.currentTarget.style.borderColor='#1E2A3A'}>
-              <div style={{ fontSize:28, marginBottom:12 }}>{f.icon}</div>
-              <h3 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:19, marginBottom:8, color:'#E8DCC8' }}>{f.title}</h3>
-              <p style={{ fontSize:13, color:'#6B7A8D', lineHeight:1.7 }}>{f.desc}</p>
+      {/* Hero */}
+      <header className="hero">
+        <div className="container hero-grid">
+          <div>
+            <h1>Know where your money goes.</h1>
+            <p className="hero-sub">
+              Aurum is a simple expense tracker with monthly budgets, clear reports, and an advisor that answers questions using your own numbers.
+            </p>
+            <div className="hero-cta">
+              <Link to="/register" className="btn btn-primary btn-lg">Create a free account</Link>
+              <Link to="/login" className="btn btn-secondary btn-lg">Log in</Link>
             </div>
-          ))}
+            <p className="hero-meta">Free to use. No card required.</p>
+          </div>
+          <ProductPreview/>
         </div>
-      </section>
+      </header>
 
-      {/* BENEFITS */}
-      <section id="benefits" style={{ background:'#0D1321', borderTop:'1px solid #1E2A3A', borderBottom:'1px solid #1E2A3A', padding:'80px 40px' }}>
-        <div style={{ maxWidth:900, margin:'0 auto', textAlign:'center' }}>
-          <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:'#C9A84C', letterSpacing:3, marginBottom:12 }}>WHY AURUM</div>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(28px,4vw,44px)', fontWeight:600, marginBottom:48 }}>Built to make you financially smarter</h2>
-          <div className="ben-grid" style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:20 }}>
-            {BENEFITS.map(b => (
-              <div key={b.text} style={{ display:'flex', alignItems:'flex-start', gap:14, background:'#111B2E', border:'1px solid #1E2A3A', borderRadius:14, padding:20, textAlign:'left' }}>
-                <span style={{ fontSize:24, flexShrink:0 }}>{b.icon}</span>
-                <p style={{ fontSize:14, color:'#A0B0C0', lineHeight:1.7 }}>{b.text}</p>
+      {/* Features */}
+      <section id="features" className="section">
+        <div className="container">
+          <div className="section-head">
+            <h2>Everything in one place, nothing you don’t need.</h2>
+            <p>The essentials for keeping personal finances in order, without the clutter of a full accounting tool.</p>
+          </div>
+          <div className="feature-grid">
+            {FEATURES.map(f => (
+              <div key={f.title} className="feature">
+                <f.icon size={20} strokeWidth={1.6}/>
+                <h3>{f.title}</h3>
+                <p>{f.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <section style={{ padding:'80px 40px', maxWidth:1000, margin:'0 auto' }}>
-        <div style={{ textAlign:'center', marginBottom:48 }}>
-          <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:'#C9A84C', letterSpacing:3, marginBottom:12 }}>TESTIMONIALS</div>
-          <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(24px,3.5vw,38px)', fontWeight:600 }}>Loved by thousands of users</h2>
-        </div>
-        <div className="test-grid" style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:20 }}>
-          {TESTIMONIALS.map(t => (
-            <div key={t.name} style={{ background:'#0D1321', border:'1px solid #1E2A3A', borderRadius:16, padding:24 }}>
-              <p style={{ fontSize:14, color:'#A0B0C0', lineHeight:1.8, marginBottom:20, fontStyle:'italic' }}>"{t.text}"</p>
-              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ width:38, height:38, borderRadius:'50%', background:'linear-gradient(135deg,#C9A84C,#E8C66B)', display:'flex', alignItems:'center', justifyContent:'center', color:'#080C14', fontWeight:700, fontSize:15, fontFamily:"'Cormorant Garamond',serif" }}>{t.name[0]}</div>
-                <div>
-                  <div style={{ fontSize:13, color:'#E8DCC8', fontWeight:600 }}>{t.name}</div>
-                  <div style={{ fontSize:11, color:'#4A5A6E', fontFamily:"'DM Mono',monospace" }}>{t.role}</div>
-                </div>
+      {/* How it works */}
+      <section id="how" className="section">
+        <div className="container">
+          <div className="section-head">
+            <h2>A few minutes a week.</h2>
+            <p>Aurum works best as a light habit rather than a chore.</p>
+          </div>
+          <div className="steps">
+            {STEPS.map((s, i) => (
+              <div key={s.title} className="step-item">
+                <div className="step-n">0{i + 1}</div>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" style={{ background:'#0D1321', borderTop:'1px solid #1E2A3A', padding:'80px 40px' }}>
-        <div style={{ maxWidth:720, margin:'0 auto' }}>
-          <div style={{ textAlign:'center', marginBottom:48 }}>
-            <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:'#C9A84C', letterSpacing:3, marginBottom:12 }}>FAQ</div>
-            <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(24px,3.5vw,38px)', fontWeight:600 }}>Frequently Asked Questions</h2>
+      <section id="faq" className="section">
+        <div className="container faq-layout">
+          <div className="section-head" style={{ marginBottom:0 }}>
+            <h2>Questions</h2>
+            <p>Can’t find what you’re looking for? <Link to="/contact" className="link">Get in touch</Link>.</p>
           </div>
-          {FAQS.map(f => (
-            <details key={f.q} className="faq-item" style={{ borderBottom:'1px solid #1E2A3A' }}>
-              <summary>{f.q}</summary>
-              <p>{f.a}</p>
-            </details>
-          ))}
+          <div>
+            {FAQS.map(f => (
+              <details key={f.q} className="faq-item">
+                <summary>{f.q}<Plus size={18}/></summary>
+                <p>{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section style={{ padding:'80px 24px', textAlign:'center' }}>
-        <h2 style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:'clamp(28px,4vw,48px)', fontWeight:600, marginBottom:16 }}>Ready to take control of your money?</h2>
-        <p style={{ fontSize:15, color:'#6B7A8D', marginBottom:36 }}>Join thousands of users already tracking smarter with Aurum.</p>
-        <Link to="/register" style={{ background:'linear-gradient(135deg,#C9A84C,#E8C66B)', color:'#080C14', padding:'16px 40px', borderRadius:12, fontFamily:"'DM Mono',monospace", fontWeight:700, fontSize:14, textDecoration:'none' }}>Create Free Account →</Link>
+      <section className="cta-band">
+        <div className="container cta-inner">
+          <div>
+            <h2>Start tracking in about two minutes.</h2>
+            <p>Set your currency, add a budget, log your first expense.</p>
+          </div>
+          <Link to="/register" className="btn btn-primary btn-lg">Create a free account</Link>
+        </div>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ background:'#0D1321', borderTop:'1px solid #1E2A3A', padding:'32px 40px', display:'flex', justifyContent:'space-between', alignItems:'center', flexWrap:'wrap', gap:16 }}>
-        <Link to={user ? (user.onboardingCompleted ? "/dashboard" : "/onboarding") : "/"} style={{ fontFamily:"'Cormorant Garamond',serif", fontSize:18, color:'#C9A84C', textDecoration:'none' }} className="logo-link">✦ Aurum</Link>
-        <div style={{ display:'flex', gap:24, flexWrap:'wrap' }}>
-          {[{to:'/about','l':'About'},{to:'/contact','l':'Contact'},{to:'/privacy-policy','l':'Privacy Policy'},{to:'/terms','l':'Terms of Service'}].map(l => (
-            <Link key={l.to} to={l.to} style={{ color:'#4A5A6E', textDecoration:'none', fontSize:12, fontFamily:"'DM Mono',monospace", transition:'color .2s' }}
-              onMouseEnter={e=>e.target.style.color='#C9A84C'} onMouseLeave={e=>e.target.style.color='#4A5A6E'}>{l.l}</Link>
-          ))}
+      <footer className="site-footer">
+        <div className="container">
+          <Logo/>
+          <nav>
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/privacy-policy">Privacy</Link>
+            <Link to="/terms">Terms</Link>
+          </nav>
+          <div className="copy">© {new Date().getFullYear()} Aurum</div>
         </div>
-        <div style={{ fontSize:11, fontFamily:"'DM Mono',monospace", color:'#3A4A5E' }}>© {new Date().getFullYear()} Aurum. All rights reserved.</div>
       </footer>
     </div>
   );

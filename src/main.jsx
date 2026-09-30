@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
+import { ThemeProvider } from './context/ThemeContext.jsx'
 import './index.css'
 
 const queryClient = new QueryClient({
@@ -23,22 +24,28 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <AuthProvider>
-          <App />
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              style: {
-                background: '#0D1321',
-                border: '1px solid #2A3A50',
-                color: '#E8DCC8',
-                fontFamily: "'DM Mono', monospace",
-                fontSize: '13px',
-              },
-              success: { iconTheme: { primary: '#C9A84C', secondary: '#080C14' } },
-            }}
-          />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <App />
+            <Toaster
+              position="bottom-right"
+              toastOptions={{
+                style: {
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text)',
+                  fontFamily: 'var(--font-sans)',
+                  fontSize: '13.5px',
+                  borderRadius: '8px',
+                  boxShadow: 'var(--shadow-pop)',
+                  padding: '10px 12px',
+                },
+                success: { iconTheme: { primary: 'var(--positive)', secondary: 'var(--surface)' } },
+                error:   { iconTheme: { primary: 'var(--negative)', secondary: 'var(--surface)' } },
+              }}
+            />
+          </AuthProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>
