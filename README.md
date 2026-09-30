@@ -16,7 +16,8 @@ This repository is the **React single-page app**. It talks to the Aurum backend 
 - [Project structure](#project-structure)
 - [How the app works](#how-the-app-works)
 - [Design system](#design-system)
-- [Backend API used by the frontend](#backend-api-used-by-the-frontend)
+- [Backend API](#backend-api)
+- [Security notes](#security-notes)
 - [Deployment](#deployment)
 - [Known issues](#known-issues)
 
@@ -97,7 +98,7 @@ Open http://localhost:5173. Requests to `/api/*` are proxied to `VITE_BACKEND_UR
 
 ### 4. Create an account
 
-Register through the app. To get an **admin** account, register with the email address set as `ADMIN_EMAIL` in the backend's `.env`. The backend marks that account as admin when it is created.
+Register through the app, then open the verification link sent to your email before logging in. Admin access is configured on the backend; see the backend's own documentation.
 
 ---
 
@@ -179,11 +180,9 @@ There are no automated tests or lint scripts yet.
 
 ### Authentication
 
-- On login or registration the backend returns a JWT and the user object. Both are stored in `localStorage` (`aurum_token`, `aurum_user`).
-- `src/utils/api.js` adds `Authorization: Bearer <token>` to every request.
-- On startup, `AuthContext` calls `GET /auth/me` to refresh the user. If that fails, the session is cleared.
-- Any `401` response (other than a failed login or registration) clears the session and sends the user to `/login`.
+- Session handling lives in `src/context/AuthContext.jsx` (the `useAuth()` hook) and `src/utils/api.js`, which attaches the session to API requests and signs the user out if the session expires.
 - `PrivateRoute` in `App.jsx` sends logged-out users to `/login` and users who haven't finished onboarding to `/onboarding`.
+- Route guards in the frontend only control what is shown. All access control, including admin-only features, is enforced by the backend.
 
 ### Data fetching
 
@@ -203,12 +202,12 @@ After a change, pages invalidate every key that depends on it. For example, addi
 
 ### Browser storage
 
+Besides the login session, the app keeps two preferences in `localStorage`:
+
 | Key | Contents |
 |---|---|
-| `aurum_token` | JWT |
-| `aurum_user` | Cached user object |
 | `aurum_theme` | `system`, `light` or `dark` |
-| `aurum_ai_chat` | Advisor conversation (browser-only, never sent to the server for storage) |
+| `aurum_ai_chat` | Advisor conversation (stays in the browser; never stored on the server) |
 
 ### Theme
 
@@ -282,22 +281,11 @@ The eight expense-category colors are a fixed, colorblind-checked order. Don't r
 
 ---
 
-## Backend API used by the frontend
+## Backend API
 
-Every path is relative to `VITE_API_BASE_URL` (`/api` by default). Every endpoint needs the JWT except register, login, email verification, the password-reset pair and contact.
+All requests go through the Axios client in `src/utils/api.js`, relative to `VITE_API_BASE_URL` (`/api` by default). The frontend uses the backend's account, expense, budget, AI, report, feedback and contact APIs. The backend documentation is the reference for endpoints and payloads; the calls each page makes are in its file under `src/pages/`.
 
-| Area | Endpoints |
-|---|---|
-| Auth | `POST /auth/register`, `POST /auth/login`, `GET /auth/me`, `PATCH /auth/profile`, `PATCH /auth/password`, `POST /auth/verify-email`, `POST /auth/resend-verification`, `POST /auth/forgot-password`, `POST /auth/reset-password` |
-| Expenses | `GET /expenses` (query: `page`, `limit`, `sort`, `order`, `search`, `cat`, `month`), `GET /expenses/stats?month=`, `POST /expenses`, `PUT /expenses/:id`, `DELETE /expenses/:id`, `DELETE /expenses` (delete all) |
-| Budgets | `GET /budgets?month=`, `POST /budgets`, `DELETE /budgets/:category?month=` |
-| AI | `POST /ai/categorize`, `POST /ai/chat`, `GET /ai/insights` |
-| Reports | `GET /reports`, `POST /reports/generate`, `GET /reports/:month/pdf`, `GET /reports/:month/csv` |
-| Feedback | `GET /feedback`, `POST /feedback` |
-| Contact | `POST /contact` |
-| Admin | `GET /admin/users`, `PATCH /admin/users/:id/toggle-unlimited` |
-
-The backend enforces the advisor limit: free users get 2 `POST /ai/chat` requests, unless an admin has granted unlimited access.
+Usage limits, such as the number of free advisor questions, are enforced by the backend, not the frontend.
 
 ### Categories
 
@@ -318,9 +306,18 @@ Any static host works the same way, as long as it serves `index.html` for unknow
 
 ---
 
+## Security notes
+
+- Never commit `.env` files, API keys, database URLs or production backend addresses. `.env` is git-ignored; put real values in your hosting provider's environment settings.
+- Everything under `VITE_` is compiled into the public JavaScript bundle and visible to anyone. Never put secrets in `VITE_` variables. Secrets belong on the backend only.
+- Treat the frontend as untrusted. Permissions, limits and data validation must be enforced on the backend.
+- Report security issues privately to the maintainer rather than in a public issue.
+
+---
+
 ## Known issues
 
-- **PDF/CSV export on Reports probably fails.** The buttons open `/api/reports/:month/pdf|csv` with `window.open`. That request doesn't carry the JWT, which the backend requires, and it ignores `VITE_API_BASE_URL`. Fixing it means downloading the file through the Axios client (as a blob) or adding a signed or token download link on the backend.
+- **PDF/CSV export on Reports probably fails.** The buttons open the export in a new tab, bypassing the Axios client, so the request isn't signed in and ignores `VITE_API_BASE_URL`. The fix is to download the file through the Axios client (as a blob).
 - **The Privacy Policy promises account deletion** ("Settings → Account"). The app can currently delete all transactions, but not the account itself.
 - **Onboarding uses UTC dates** (`toISOString()`) for the first income and transaction. Users east of UTC who complete onboarding shortly after midnight get the previous day. Switch these to `toISODate()` / `toISOMonth()`.
 - **Single bundle** (~960 kB minified, ~280 kB gzipped). Lazy-loading routes with `React.lazy` would improve first load.
